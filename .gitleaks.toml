@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+# Sleeper user and league IDs are 18 or 19 digit snowflakes. They belong in
+# ~/.agents/context, never in a skill.
+[[rules]]
+id = "sleeper-id"
+description = "Sleeper user or league ID"
+regex = '''\b\d{18,19}\b'''

@@ -3,6 +3,8 @@ name: golf-swing-analysis
 description: Analyze golf swings from uploaded videos or from golf-etl session folders in a GitHub repo or Google Drive. Use this skill whenever the user uploads a golf swing video (.mov, .mp4, or similar) and asks for coaching feedback, swing analysis, what they're doing wrong, how to improve, or any question about their golf swing mechanics. Also use it whenever the user asks to review a golf session, their latest or recent swings, today's range session, or a folder under sessions in their golf-etl sessions repo, even if they don't say golf-etl. Also trigger when the user says they're at the range and wants swing feedback, or when they share multiple swing videos for comparison. Get the frames (from the session folder or by extracting them from the video), identify the camera angle, ask for ball flight context before diagnosing, and deliver structured coaching feedback with prioritized next steps.
 license: MIT
 compatibility: Uploaded videos need a shell with ffmpeg. golf-etl sessions need access to the GitHub repo or Google Drive folder that holds them.
+metadata:
+  version: "0.1.0" # x-release-please-version
 ---
 
 # Golf Swing Analysis Skill

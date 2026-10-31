@@ -54,7 +54,8 @@ link() { ln -sfn "$1" "$2/$(basename "$1")"; }
 # ln would put the link inside a real directory of the same name (a skill
 # installed by hand), so that one is left alone.
 link_skill() {
-  local dest="$2/$(basename "$1")"
+  local dest
+  dest="$2/$(basename "$1")"
   if [ -d "$dest" ] && [ ! -L "$dest" ]; then
     echo "skipping $dest: not a symlink, remove it to install from this repo" >&2
     return

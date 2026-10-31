@@ -2,6 +2,8 @@
 name: performance-review
 description: "Identify hidden performance bottlenecks, scalability risks, and concurrency issues in code changes. Use when: reviewing for performance, checking scalability, auditing concurrency safety, evaluating resource usage, or self-reviewing your own performance diff before you commit, amend, or push it, including a branch inherited from a handoff."
 license: MIT
+metadata:
+  version: "0.1.0" # x-release-please-version
 ---
 
 # Performance & Scalability Review

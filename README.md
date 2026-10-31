@@ -124,6 +124,38 @@ from `mods/`, so an edit takes effect at the next session start or `/reload-plug
 Plus `~/.config/Code/User/prompts/` and `~/.vscode-server/data/User/prompts/`
 (generated `*.instructions.md` for any skill marked `metadata.applyTo`).
 
+To install skills without a checkout, on any machine:
+
+```bash
+npx skills add rumstead/ai-loadout -g            # every skill, from main
+npx skills add https://github.com/rumstead/ai-loadout/tree/<tag>/skills/<skill> -g   # one skill at a release
+```
+
+## Releases
+
+Each skill and each mod is versioned on its own. release-please keeps a release
+PR open from conventional commits on `main`. Merging it tags each changed skill
+or mod as `<name>-v<version>`, bumps `metadata.version` in its `SKILL.md` (or
+`version` in its `plugin.json`), and writes its `CHANGELOG.md`. A skill release
+also carries `<skill>.zip` for uploading to claude.ai.
+
+## Checks
+
+Every PR runs the Agent Skills validator (`skills-ref`), `claude plugin validate`
+and `claude plugin test` on the mods, shellcheck on `install.sh`, and gitleaks
+with an extra rule for Sleeper IDs.
+
+Evals run only on a PR labeled `run-evals`, and again on each push while the
+label stays. They use promptfoo with the Claude Agent SDK against
+`evals/promptfooconfig.yaml`, on Sonnet unless an `eval-model:opus` or
+`eval-model:haiku` label says otherwise. They need the `ANTHROPIC_API_KEY` and
+`WAIVER_SWEEP_CONTEXT` (the contents of your waiver sweep context file) repo
+secrets. To run them locally:
+
+```bash
+cd evals && npx -p promptfoo@0.125.1 -p @anthropic-ai/claude-agent-sdk@0.3.316 promptfoo eval
+```
+
 ## License
 
 [MIT](LICENSE)

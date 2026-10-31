@@ -1,0 +1,43 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      created: ${{ steps.release.outputs.releases_created }}
+      paths: ${{ steps.release.outputs.paths_released }}
+      all: ${{ toJSON(steps.release.outputs) }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v5
+
+  # A skill release carries <skill>.zip, the folder claude.ai takes as an upload.
+  skill-zip:
+    needs: release-please
+    if: needs.release-please.outputs.created == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path: ${{ fromJSON(needs.release-please.outputs.paths) }}
+    steps:
+      - uses: actions/checkout@v7
+        if: startsWith(matrix.path, 'skills/')
+      - name: Attach the skill zip
+        if: startsWith(matrix.path, 'skills/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKILL_PATH: ${{ matrix.path }}
+          TAG: ${{ fromJSON(needs.release-please.outputs.all)[format('{0}--tag_name', matrix.path)] }}
+        run: |
+          name="$(basename "$SKILL_PATH")"
+          (cd skills && zip -qr "../$name.zip" "$name")
+          gh release upload "$TAG" "$name.zip"

@@ -2,6 +2,8 @@
 name: issue-alignment
 description: "Analyze whether PR changes fully address a GitHub issue's requirements. Use when: checking PR-to-issue alignment, verifying acceptance criteria coverage, detecting scope creep or missing deliverables."
 license: MIT
+metadata:
+  version: "0.1.0" # x-release-please-version
 ---
 
 # Issue Alignment Analysis
