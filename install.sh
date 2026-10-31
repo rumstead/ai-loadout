@@ -40,13 +40,27 @@ WINDSURF_DIR="$HOME/.codeium/windsurf/global_workflows"
 CLAUDE_AGENTS="$HOME/.claude/agents"
 CLAUDE_SKILLS="$HOME/.claude/skills"
 
+# Any other Agent Skills harness (pi, among others) reads ~/.agents/skills.
+AGENTS_SKILLS="$HOME/.agents/skills"
+
 mkdir -p \
   "$VSCODE_PROMPTS" "$CLI_AGENTS" "$DEFAULT_AGENTS" "$COPILOT_SKILLS" \
   "$VSCODE_SERVER_PROMPTS" \
   "$WINDSURF_DIR" \
-  "$CLAUDE_AGENTS" "$CLAUDE_SKILLS"
+  "$CLAUDE_AGENTS" "$CLAUDE_SKILLS" "$AGENTS_SKILLS"
 
 link() { ln -sfn "$1" "$2/$(basename "$1")"; }
+
+# ln would put the link inside a real directory of the same name (a skill
+# installed by hand), so that one is left alone.
+link_skill() {
+  local dest="$2/$(basename "$1")"
+  if [ -d "$dest" ] && [ ! -L "$dest" ]; then
+    echo "skipping $dest: not a symlink, remove it to install from this repo" >&2
+    return
+  fi
+  ln -sfn "$1" "$dest"
+}
 
 # ---- Frontmatter adapter: Copilot agent -> Claude Code subagent ---------------
 #
@@ -129,27 +143,45 @@ to_claude_agent() {
 
 # ---- Frontmatter adapter: skill -> Copilot custom instructions ----------------
 #
-# A skill whose frontmatter carries `applyTo:` is personal *context* (voice,
-# style, standing preferences) rather than a procedure to run on request. Copilot
-# has no on-demand skill discovery, so those are also emitted as an always-on
-# `<name>.instructions.md`. Claude Code needs no equivalent: it discovers the
-# skill by its `description` at run time.
+# A skill whose frontmatter carries `metadata.applyTo` is personal *context*
+# (voice, style, standing preferences) rather than a procedure to run on request.
+# Copilot has no on-demand skill discovery, so those are also emitted as an
+# always-on `<name>.instructions.md`. Claude Code needs no equivalent: it
+# discovers the skill by its `description` at run time.
 #
 # Reads SKILL.md on stdin, writes the instructions file on stdout:
-#   - keeps `description:` and `applyTo:`, drops `name:` and `user-invocable:`
+#   - keeps `description:` and lifts `metadata.applyTo` to a top-level `applyTo:`
+#   - drops every other key, since an instructions file only reads those two
 #   - leaves the Markdown body verbatim
 to_copilot_instructions() {
   awk '
-    BEGIN { in_fm = 0 }
+    BEGIN { in_fm = 0; key = "" }
     NR == 1 && $0 == "---" { in_fm = 1; print; next }
     in_fm && $0 == "---"   { in_fm = 0; print; next }
     in_fm {
-      if ($0 ~ /^(name|user-invocable):/) next
-      print
+      # Indented lines belong to the last top-level key.
+      if ($0 ~ /^[ \t]/) {
+        if (key == "metadata" && $0 ~ /^[ \t]+applyTo:/) { sub(/^[ \t]+/, ""); print }
+        else if (key == "description") print
+        next
+      }
+      key = $0; sub(/:.*/, "", key)
+      if (key == "description") print
       next
     }
     { print }
   '
+}
+
+# True when SKILL.md has an `applyTo:` key under `metadata:`.
+has_apply_to() {
+  awk '
+    NR == 1 && $0 == "---" { in_fm = 1; next }
+    in_fm && $0 == "---"   { exit }
+    in_fm && $0 !~ /^[ \t]/ { in_meta = ($0 ~ /^metadata:/); next }
+    in_fm && in_meta && $0 ~ /^[ \t]+applyTo:/ { found = 1; exit }
+    END { exit !found }
+  ' "$1"
 }
 
 # ---- Agents -------------------------------------------------------------------
@@ -177,11 +209,12 @@ done
 for d in "$REPO_DIR"/skills/*/; do
   [ -d "$d" ] || continue
   name="$(basename "$d")"
-  ln -sfn "${d%/}" "$COPILOT_SKILLS/$name"
-  ln -sfn "${d%/}" "$CLAUDE_SKILLS/$name"
+  link_skill "${d%/}" "$COPILOT_SKILLS"
+  link_skill "${d%/}" "$CLAUDE_SKILLS"
+  link_skill "${d%/}" "$AGENTS_SKILLS"
 
-  # Skills marked `applyTo:` double as Copilot always-on custom instructions.
-  if [ -f "${d}SKILL.md" ] && grep -q '^applyTo:' "${d}SKILL.md"; then
+  # Skills marked `metadata.applyTo` double as Copilot always-on custom instructions.
+  if [ -f "${d}SKILL.md" ] && has_apply_to "${d}SKILL.md"; then
     to_copilot_instructions < "${d}SKILL.md" > "$VSCODE_PROMPTS/$name.instructions.md"
     to_copilot_instructions < "${d}SKILL.md" > "$VSCODE_SERVER_PROMPTS/$name.instructions.md"
   fi
@@ -208,7 +241,8 @@ fi
 
 echo "Installed agents and skills from $REPO_DIR"
 echo "  Copilot   : $VSCODE_PROMPTS, $CLI_AGENTS, $DEFAULT_AGENTS (+ skills in $COPILOT_SKILLS)"
-echo "  Instrucns : $VSCODE_PROMPTS, $VSCODE_SERVER_PROMPTS (generated from applyTo skills)"
+echo "  Instrucns : $VSCODE_PROMPTS, $VSCODE_SERVER_PROMPTS (generated from metadata.applyTo skills)"
 echo "  Windsurf  : $WINDSURF_DIR"
 echo "  ClaudeCode: $CLAUDE_AGENTS (generated) + skills in $CLAUDE_SKILLS"
+echo "  Agents    : skills in $AGENTS_SKILLS"
 echo "  Mods      : ${MODS[*]:-none} (user scope, marketplace $MARKETPLACE)"
