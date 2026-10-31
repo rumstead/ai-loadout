@@ -1,4 +1,4 @@
-# ai-agents
+# ai-loadout
 
 Personal collection of AI coding **subagents**, **skills**, and Claude Code **mods**, kept in one place
 so they can be versioned, shared, and reused across AI coding harnesses.
@@ -6,7 +6,7 @@ so they can be versioned, shared, and reused across AI coding harnesses.
 ## Structure
 
 ```
-ai-agents/
+ai-loadout/
 ├── install.sh        # symlinks agents and skills into their live locations
 ├── .claude-plugin/   # marketplace.json listing the mods
 ├── agents/           # *.agent.md subagents
@@ -117,7 +117,7 @@ This installs into each harness's live locations:
 | **Claude Code** | `~/.claude/agents/` — generated | `~/.claude/skills/` — symlinked |
 | **Other Agent Skills harnesses** | none | `~/.agents/skills/` (symlinked) |
 
-For Claude Code it also adds this repo as the `rumstead-ai-agents` plugin
+For Claude Code it also adds this repo as the `rumstead-ai-loadout` plugin
 marketplace and installs every mod in it at user scope. The mods are read in place
 from `mods/`, so an edit takes effect at the next session start or `/reload-plugins`.
 
