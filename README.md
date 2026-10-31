@@ -1,4 +1,4 @@
-# ai-agents
+# ai-loadout
 
 Personal collection of AI coding **subagents**, **skills**, and Claude Code **mods**, kept in one place
 so they can be versioned, shared, and reused across AI coding harnesses.
@@ -6,7 +6,7 @@ so they can be versioned, shared, and reused across AI coding harnesses.
 ## Structure
 
 ```
-ai-agents/
+ai-loadout/
 ├── install.sh        # symlinks agents and skills into their live locations
 ├── .claude-plugin/   # marketplace.json listing the mods
 ├── agents/           # *.agent.md subagents
@@ -32,6 +32,18 @@ ai-agents/
 | `code-quality-review` | Evaluate code idioms, style, design patterns, and architectural fit |
 | `issue-alignment` | Verify PR changes align with a GitHub issue's requirements |
 | `performance-review` | Find performance bottlenecks, scalability and concurrency risks |
+| `fantasy-waiver-sweep` | Weekly Sleeper waiver sweep: bench audit, league-winner pickups, bids, streamers |
+| `fantasy-start-sit` | Start/sit, waiver, and streaming calls from a lineup or matchup screenshot |
+| `golf-swing-analysis` | Coaching feedback from swing videos or golf-etl sessions |
+
+### Private context
+
+Skills hold nothing personal. A skill that needs to know who you are (your
+leagues, where your golf sessions live) reads an optional
+`~/.agents/context/<skill>.md`, and anything in it overrides the skill's
+defaults. It lives outside the skill folder, so installing or upgrading a skill
+leaves it alone. `context.example.md` in the skill folder lists the fields.
+Without it, the skill takes what it needs from the conversation or asks.
 
 ### Mods
 
@@ -53,12 +65,16 @@ claude plugin test mods/<name>
 
 ### Always-on instructions
 
-A skill whose frontmatter carries `applyTo:` is personal *context* (voice, style,
+A skill whose frontmatter carries `metadata.applyTo` is personal *context* (voice, style,
 standing preferences) rather than a procedure to run on request. Claude Code
 discovers it by `description` at run time like any other skill, but Copilot has no
 on-demand skill discovery, so `install.sh` also generates an always-on
 `<name>.instructions.md` for it in the VS Code prompts directories (local and
 Remote).
+
+Skill frontmatter sticks to the fields in the
+[Agent Skills specification](https://agentskills.io/specification), so anything
+harness-specific goes under `metadata`.
 
 Claude Code only consults such a skill when the task matches its description. Rules that must apply to *every* reply (no em dashes) belong in
 `~/.claude/CLAUDE.md`, which is loaded into every session.
@@ -99,10 +115,15 @@ This installs into each harness's live locations:
 | **GitHub Copilot** | `~/Library/Application Support/Code/User/prompts/` on macOS or `~/.config/Code/User/prompts/` elsewhere (VS Code), `~/.config/copilot/agents/` and `~/.copilot/agents/` (CLI) — symlinked | `~/.copilot/skills/` — symlinked |
 | **Windsurf** | `~/.codeium/windsurf/global_workflows/` — symlinked | (delivered as workflows) |
 | **Claude Code** | `~/.claude/agents/` — generated | `~/.claude/skills/` — symlinked |
+| **Other Agent Skills harnesses** | none | `~/.agents/skills/` (symlinked) |
 
-For Claude Code it also adds this repo as the `rumstead-ai-agents` plugin
+For Claude Code it also adds this repo as the `rumstead-ai-loadout` plugin
 marketplace and installs every mod in it at user scope. The mods are read in place
 from `mods/`, so an edit takes effect at the next session start or `/reload-plugins`.
 
 Plus `~/.config/Code/User/prompts/` and `~/.vscode-server/data/User/prompts/`
-(generated `*.instructions.md` for any skill marked `applyTo:`).
+(generated `*.instructions.md` for any skill marked `metadata.applyTo`).
+
+## License
+
+[MIT](LICENSE)
