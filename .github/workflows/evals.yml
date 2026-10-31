@@ -42,6 +42,7 @@ jobs:
       - run: npm install --no-save promptfoo@0.125.1 @anthropic-ai/claude-agent-sdk@0.3.316
       - name: Run evals
         env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           PROMPTFOO_DISABLE_TELEMETRY: "1"
         run: npx promptfoo eval -c evals/promptfooconfig.yaml --no-cache -o "$RUNNER_TEMP/evals.json"

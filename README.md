@@ -148,9 +148,10 @@ with an extra rule for Sleeper IDs.
 Evals run only on a PR labeled `run-evals`, and again on each push while the
 label stays. They use promptfoo with the Claude Agent SDK against
 `evals/promptfooconfig.yaml`, on Sonnet unless an `eval-model:opus` or
-`eval-model:haiku` label says otherwise. They need the `ANTHROPIC_API_KEY` and
-`WAIVER_SWEEP_CONTEXT` (the contents of your waiver sweep context file) repo
-secrets. To run them locally:
+`eval-model:haiku` label says otherwise. They authenticate with a
+`CLAUDE_CODE_OAUTH_TOKEN` repo secret (from `claude setup-token`, billed to
+your Claude plan) or an `ANTHROPIC_API_KEY` one, and read
+`WAIVER_SWEEP_CONTEXT`, the contents of your waiver sweep context file. To run them locally:
 
 ```bash
 cd evals && npx -p promptfoo@0.125.1 -p @anthropic-ai/claude-agent-sdk@0.3.316 promptfoo eval

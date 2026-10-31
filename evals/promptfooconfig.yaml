@@ -17,6 +17,9 @@ providers:
       allow_dangerously_skip_permissions: true
       append_allowed_tools: ['Bash', 'Write', 'WebSearch', 'WebFetch']
       max_budget_usd: 5
+      # The SDK also takes CLAUDE_CODE_OAUTH_TOKEN, a subscription token from
+      # `claude setup-token`, so an API key is optional.
+      apiKeyRequired: false
 
 evaluateOptions:
   # Cases share the workspace and the waiver sweep writes data files into it.
