@@ -1,0 +1,84 @@
+{
+  "panel": [
+    1480,
+    1690,
+    110,
+    430
+  ],
+  "frames": 12,
+  "unchanged": true,
+  "fields": {
+    "club_path": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "carry_game": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "face_to_path": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "carry_raw": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "back_spin": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "total_length": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "smash": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "ball_speed": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "peak_height": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "total_spin": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "face_to_target": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    },
+    "club_speed": {
+      "text": null,
+      "value": null,
+      "votes": 0,
+      "seen_s": null
+    }
+  }
+}
