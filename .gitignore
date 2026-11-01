@@ -5,3 +5,4 @@
 skills/writing-as-rumstead/
 evals/workspace/*
 !evals/workspace/.claude/
+!evals/workspace/names.go

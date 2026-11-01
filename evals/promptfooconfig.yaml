@@ -50,22 +50,11 @@ tests:
       - type: not-skill-used
         value: fantasy-waiver-sweep
 
-  - description: a Go style question goes to code-quality-review
+  - description: a style review of a file in the workspace goes to code-quality-review
     vars:
-      request: |
-        Review this Go for idioms and style. Findings only, don't rewrite it.
-
-        ```go
-        func GetNames(users []User) []string {
-        	var names []string = []string{}
-        	for i := 0; i < len(users); i++ {
-        		names = append(names, users[i].Name)
-        	}
-        	return names
-        }
-        ```
+      request: Do a code quality review of names.go for idioms, style, and design. Findings only, don't edit it.
     assert:
       - type: skill-used
         value: code-quality-review
-      - type: not-skill-used
-        value: fantasy-waiver-sweep
+      - type: javascript
+        value: "!(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Edit', 'Write'].includes(t.name))"
