@@ -69,6 +69,6 @@ tests:
       - type: skill-used
         value: golf-swing-analysis
       - type: javascript
-        value: '/^`?swing-01: 73\.2, 89\.7, 110\.0`?$/m.test(output)'
+        value: '/^`?swing-01: 94\.6, 137\.6, 216\.8`?$/m.test(output)'
       - type: javascript
         value: '/^`?swing-02: none`?$/m.test(output)'

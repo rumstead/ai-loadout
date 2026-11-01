@@ -1,6 +1,6 @@
 # Session 2026-10-30-1815-5e1f0a2c
 
-- Source: IMG_4761.MOV
+- Source: IMG_4762.MOV
 - Captured: 2026-10-30 18:15 UTC
 - Checksum: 5e1f0a2c00000000000000000000000000000000000000000000000000000000
 - Pipeline: eval
@@ -19,12 +19,12 @@
 - The skeleton lines on the sequence sheet are a pose estimate; trust the photo over the lines.
 - Ball px/frame, Start dir and Grade come from following the ball in the swing video. Ball px/frame is how fast it leaves the club, in pixels per video frame, so compare it only within this session. Grade compares it to the session median: good is near the median or faster, poor is well under it, fair is between; `ball.json` in each swing folder has the thresholds. Start dir is sideways over up: negative starts left of the camera line, positive right. A `lost:` track says why the ball could not be followed, and that swing has no grade.
 
-Ball flight: 1 good, 1 fair, 0 poor, 0 not tracked (median ball speed 20.6 px/frame)
+Ball flight: 2 good, 0 fair, 0 poor, 0 not tracked (median ball speed 23.4 px/frame)
 
 | Swing | Impact | Strength | Hand speed peak | Ball px/frame | Start dir | Grade | Track |
 |---|---|---|---|---|---|---|---|
-| swing-01 | 58.92s | 0.81 | -12ms | 21.4 | 0.04 | good | ok |
-| swing-02 | 1:24.4 | 0.44 | +30ms | 19.8 | -0.02 | fair | ok |
+| swing-01 | 2:25.4 | 0.83 | -8ms | 24.1 | 0.03 | good | ok |
+| swing-02 | 3:12.3 | 0.41 | +25ms | 22.7 | -0.01 | good | ok |
 
 ## Sim
 
@@ -32,5 +32,5 @@ The numbers below are read off the simulator screen. A blank cell means the scre
 
 | Swing | Club mph | Ball mph | Smash | Carry raw yd | Carry game yd | Total yd | Peak ft | Back spin | Total spin | Path | Face to path | Face to target |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| swing-01 | 73.2 | 89.7 | 1.23 | 110.0 | | | 33.8 | 3365 | 3554 | 1.0 I-O | 5.5 C | 4.6 C |
+| swing-01 | 94.6 | 137.6 | 1.45 | 216.8 | | 226.6 | 95.8 | 3249 | 3322 | 2.5 I-O | 0.4 C | 2.1 O |
 | swing-02 | | | | | | | | | | | | |

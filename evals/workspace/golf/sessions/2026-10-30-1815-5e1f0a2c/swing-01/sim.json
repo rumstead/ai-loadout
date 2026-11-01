@@ -1,18 +1,18 @@
 {
   "panel": [
-    1480,
-    1690,
-    110,
-    430
+    1383,
+    1509,
+    201,
+    444
   ],
-  "frames": 12,
+  "frames": 14,
   "unchanged": false,
   "fields": {
     "club_path": {
-      "text": "1.0 I-O",
-      "value": 1.0,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "2.5 I-O",
+      "value": 2.5,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "carry_game": {
       "text": null,
@@ -21,64 +21,64 @@
       "seen_s": null
     },
     "face_to_path": {
-      "text": "5.5 C",
-      "value": 5.5,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "0.4 C",
+      "value": 0.4,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "carry_raw": {
-      "text": "110.0",
-      "value": 110.0,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "216.8",
+      "value": 216.8,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "back_spin": {
-      "text": "3365",
-      "value": 3365.0,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "3249",
+      "value": 3249.0,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "total_length": {
-      "text": null,
-      "value": null,
-      "votes": 0,
-      "seen_s": null
+      "text": "226.6",
+      "value": 226.6,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "smash": {
-      "text": "1.23",
-      "value": 1.23,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "1.45",
+      "value": 1.45,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "ball_speed": {
-      "text": "89.7",
-      "value": 89.7,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "137.6",
+      "value": 137.6,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "peak_height": {
-      "text": "33.8",
-      "value": 33.8,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "95.8",
+      "value": 95.8,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "total_spin": {
-      "text": "3554",
-      "value": 3554.0,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "3322",
+      "value": 3322.0,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "face_to_target": {
-      "text": "4.6 C",
-      "value": 4.6,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "2.1 O",
+      "value": 2.1,
+      "votes": 14,
+      "seen_s": 147.9
     },
     "club_speed": {
-      "text": "73.2",
-      "value": 73.2,
-      "votes": 9,
-      "seen_s": 61.4
+      "text": "94.6",
+      "value": 94.6,
+      "votes": 14,
+      "seen_s": 147.9
     }
   }
 }
