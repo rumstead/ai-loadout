@@ -1,0 +1,92 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "initial-version": "0.1.0",
+  "bump-minor-pre-major": true,
+  "packages": {
+    "skills/code-quality-review": {
+      "component": "code-quality-review",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "SKILL.md"
+        }
+      ]
+    },
+    "skills/issue-alignment": {
+      "component": "issue-alignment",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "SKILL.md"
+        }
+      ]
+    },
+    "skills/performance-review": {
+      "component": "performance-review",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "SKILL.md"
+        }
+      ]
+    },
+    "skills/fantasy-waiver-sweep": {
+      "component": "fantasy-waiver-sweep",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "SKILL.md"
+        }
+      ]
+    },
+    "skills/fantasy-start-sit": {
+      "component": "fantasy-start-sit",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "SKILL.md"
+        }
+      ]
+    },
+    "skills/golf-swing-analysis": {
+      "component": "golf-swing-analysis",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "SKILL.md"
+        }
+      ]
+    },
+    "mods/checkout-guard": {
+      "component": "checkout-guard",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": ".claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "mods/pr-session": {
+      "component": "pr-session",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": ".claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "mods/session-info": {
+      "component": "session-info",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": ".claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+name: evals
+
+# Runs only on PRs labeled run-evals, and again on each push while the label
+# stays. An eval-model:<alias> label (opus, haiku) overrides the default sonnet.
+on:
+  pull_request:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  evals:
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'run-evals') &&
+      (github.event.action != 'labeled' ||
+       github.event.label.name == 'run-evals' ||
+       startsWith(github.event.label.name, 'eval-model:'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Pick the model
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          model="$(jq -r '[.[] | select(startswith("eval-model:")) | ltrimstr("eval-model:")][0] // "sonnet"' <<<"$LABELS")"
+          echo "EVAL_MODEL=$model" >> "$GITHUB_ENV"
+      - name: Write the waiver sweep context
+        env:
+          WAIVER_SWEEP_CONTEXT: ${{ secrets.WAIVER_SWEEP_CONTEXT }}
+        run: |
+          mkdir -p ~/.agents/context
+          printf '%s\n' "$WAIVER_SWEEP_CONTEXT" > ~/.agents/context/fantasy-waiver-sweep.md
+      - run: npm install --no-save promptfoo@0.125.1 @anthropic-ai/claude-agent-sdk@0.3.316
+      - name: Run evals
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PROMPTFOO_DISABLE_TELEMETRY: "1"
+        run: npx promptfoo eval -c evals/promptfooconfig.yaml --no-cache -o "$RUNNER_TEMP/evals.json"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: evals-${{ env.EVAL_MODEL }}
+          path: ${{ runner.temp }}/evals.json
+          if-no-files-found: ignore

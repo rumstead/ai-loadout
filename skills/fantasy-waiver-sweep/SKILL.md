@@ -3,6 +3,8 @@ name: fantasy-waiver-sweep
 description: Weekly fantasy football waiver sweep for Sleeper leagues. Audits the bench, finds role-change pickups that could be league winners (not just trending adds), checks positional depth against upcoming byes, prices each claim from the league's waiver settings, and names at most one add/drop per league plus any DEF, K or QB streamer. Use when the user asks to run the waiver sweep, audit their bench, find league winners, decide who to drop for a pickup, or what to claim on waivers in a Sleeper league.
 license: MIT
 compatibility: Needs a shell with curl and Python, network access to api.sleeper.app, github.com and raw.githubusercontent.com, and web search. Sleeper leagues only.
+metadata:
+  version: "0.1.0" # x-release-please-version
 ---
 
 # Fantasy Waiver Sweep

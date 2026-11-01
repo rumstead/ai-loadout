@@ -3,6 +3,8 @@ name: fantasy-start-sit
 description: Evaluate fantasy football start/sit, waiver, and streaming decisions from a lineup, matchup, roster, or free-agent screenshot, using independent analysis (Vegas lines, snap and target usage, rushing floor, injury news, weather, defensive matchups) rather than the platform's projections. Use this skill whenever the user shares a fantasy lineup, matchup, roster, or player-list image, or asks who to start, who to sit, what to do at flex, whether to swap someone, whether to pick up or stream a player, how their matchup looks, or for help setting a lineup. Trigger even when they don't say the words "start" or "sit". A screenshot of a fantasy matchup or free-agent list with any question attached is enough, as is "run the same analysis for this team" or "check my lineup."
 license: MIT
 compatibility: Works from a screenshot on any fantasy platform. Needs web search, and a shell with curl for the Sleeper and nflverse data.
+metadata:
+  version: "0.1.0" # x-release-please-version
 ---
 
 # Fantasy Start/Sit Evaluation

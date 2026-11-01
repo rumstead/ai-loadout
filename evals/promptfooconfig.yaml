@@ -1,0 +1,60 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Skill selection and output checks
+
+prompts:
+  - '{{ request }}'
+
+providers:
+  - id: anthropic:claude-agent-sdk
+    config:
+      model: "{{ env.EVAL_MODEL | default('sonnet') }}"
+      # workspace/.claude/skills links to every public skill, so each case
+      # also checks that the right one is picked.
+      working_dir: ./workspace
+      setting_sources: ['project']
+      skills: all
+      permission_mode: bypassPermissions
+      allow_dangerously_skip_permissions: true
+      append_allowed_tools: ['Bash', 'Write', 'WebSearch', 'WebFetch']
+      max_budget_usd: 5
+      # The SDK also takes CLAUDE_CODE_OAUTH_TOKEN, a subscription token from
+      # `claude setup-token`, so an API key is optional.
+      apiKeyRequired: false
+
+evaluateOptions:
+  # Cases share the workspace and the waiver sweep writes data files into it.
+  maxConcurrency: 1
+
+tests:
+  - description: waiver sweep runs from the user's context file
+    vars:
+      request: Run my waiver sweep.
+    assert:
+      - type: skill-used
+        value: fantasy-waiver-sweep
+      - type: javascript
+        value: '/^Subject: Waiver sweep Wk \d+/m.test(output)'
+      - type: javascript
+        value: '/^[A-Z]+: (Add |No move)/m.test(output)'
+      - type: javascript
+        value: '!/[\u2013\u2014]/.test(output)'
+      - type: javascript
+        value: '!/^#/m.test(output)'
+
+  - description: a start/sit question goes to start-sit, not the waiver sweep
+    vars:
+      request: Half PPR, flex this week is Jaylen Waddle or Rome Odunze. Who do I start? Keep it short.
+    assert:
+      - type: skill-used
+        value: fantasy-start-sit
+      - type: not-skill-used
+        value: fantasy-waiver-sweep
+
+  - description: a style review of a file in the workspace goes to code-quality-review
+    vars:
+      request: Do a code quality review of names.go for idioms, style, and design. Findings only, don't edit it.
+    assert:
+      - type: skill-used
+        value: code-quality-review
+      - type: javascript
+        value: "!(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Edit', 'Write'].includes(t.name))"

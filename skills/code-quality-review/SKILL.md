@@ -2,6 +2,8 @@
 name: code-quality-review
 description: "Evaluate code for language idioms, style consistency, design patterns, and architectural fit. Use when: reviewing code style, checking idiomatic usage, evaluating design patterns, assessing how code fits into existing codebase."
 license: MIT
+metadata:
+  version: "0.1.0" # x-release-please-version
 ---
 
 # Code Quality Review
