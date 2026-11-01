@@ -2,6 +2,8 @@
   "name": "pr-session",
   "version": "0.1.0",
   "description": "Names a session pr-<repo>-<number> after the first PR it mentions, and adds /handoff and /resume-handoff",
-  "author": { "name": "rumstead" },
+  "author": {
+    "name": "rumstead"
+  },
   "types": "./types/index.d.ts"
 }
