@@ -58,3 +58,17 @@ tests:
         value: code-quality-review
       - type: javascript
         value: "!(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Edit', 'Write'].includes(t.name))"
+
+  - description: golf sim numbers come from the Sim table, and an unchanged screen gets none
+    vars:
+      request: >-
+        golf/sessions/2026-10-30-1815-5e1f0a2c in this workspace is a golf-etl session.
+        What did the sim show for each swing? Reply with one line per swing and nothing else,
+        either `swing-NN: <club mph>, <ball mph>, <carry raw yd>` or `swing-NN: none`.
+    assert:
+      - type: skill-used
+        value: golf-swing-analysis
+      - type: javascript
+        value: '/^`?swing-01: 73\.2, 89\.7, 110\.0`?$/m.test(output)'
+      - type: javascript
+        value: '/^`?swing-02: none`?$/m.test(output)'
