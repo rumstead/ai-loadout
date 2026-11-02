@@ -18,7 +18,7 @@ jobs:
       all: ${{ toJSON(steps.release.outputs) }}
     steps:
       - id: release
-        uses: googleapis/release-please-action@v5
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
 
   # A skill release carries <skill>.zip, the folder claude.ai takes as an upload.
   skill-zip:
@@ -29,7 +29,7 @@ jobs:
       matrix:
         path: ${{ fromJSON(needs.release-please.outputs.paths) }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         if: startsWith(matrix.path, 'skills/')
       - name: Attach the skill zip
         if: startsWith(matrix.path, 'skills/')
