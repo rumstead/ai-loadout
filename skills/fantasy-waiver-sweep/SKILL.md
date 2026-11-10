@@ -1,6 +1,6 @@
 ---
 name: fantasy-waiver-sweep
-description: Weekly fantasy football waiver sweep for Sleeper leagues. Sets next week's lineup first and fills any hole a bye or injury leaves, then audits the bench, finds role-change pickups that could be league winners (not just trending adds), checks positional depth against upcoming byes, prices each claim from the league's waiver settings, and gives a DEF and K verdict every week. Names at most one add/drop per league plus any DEF, K or QB stream. Use when the user asks to run the waiver sweep, audit their bench, find league winners, decide who to drop for a pickup, or what to claim on waivers in a Sleeper league.
+description: Weekly fantasy football waiver sweep for Sleeper leagues. Sets next week's lineup first and fills any hole a bye or injury leaves, then audits the bench, finds role-change pickups that could be league winners (not just trending adds), checks positional depth against upcoming byes, prices each claim from the league's waiver settings, and gives a DEF and K verdict every week. Names at most one add/drop per league plus any DEF, K or QB stream. Use when the user asks to run the waiver sweep, audit their bench, find league winners, decide who to drop for a pickup, or what to claim on waivers in a Sleeper league. Close calls between rostered players belong to fantasy-start-sit. When a request asks for both waivers and start/sit, run this sweep first, then that skill on the lineup, and end with one MOVES table.
 license: MIT
 compatibility: Needs a shell with curl and Python, network access to api.sleeper.app, github.com and raw.githubusercontent.com, and web search. Sleeper leagues only.
 metadata:
@@ -18,6 +18,8 @@ If `~/.agents/context/fantasy-waiver-sweep.md` exists, read it first. It names t
 ## Data
 
 Fetch everything with `curl` (`-L` for GitHub), save it to disk, and analyze it with Python. Don't print the big files. Never guess the week.
+
+`scripts/sleeper_data.py` (Python standard library, `--help` for usage) covers most of this: `fetch` saves every file below for the given leagues, `lineup` shows the user's starters, bench and IR with byes and kickoffs, `lines` gives the week's kickoffs, implied totals and weather, `usage` and `free-agents` give snap, touch and points trends in the league's scoring, and `offense` gives an offense's sacks allowed and giveaways per game for DEF calls. Use it rather than writing your own matching: it ties nflverse rows to Sleeper players by `gsis_id`, then full name with suffix plus team, and never by name alone against an inactive player, so a retired namesake can't pass for an available starter.
 
 - **Sleeper public API** (`https://api.sleeper.app/v1`):
   - `/state/nfl`: `season` and `week`.
@@ -90,14 +92,16 @@ WATCH: Breece Hall (quad, week to week), Dylan Sampson (CLE, Judkins handcuff).
 Sources: bleedinggreennation.com/..., pff.com/...
 
 MOVES
-| League | Move | Player | Price |
-|---|---|---|---|
-| OFFICE | Add | Jaydon Blue (RB, PHI) | $30 |
-| OFFICE | Drop | TreVeyon Henderson (RB, NE) | |
-| OFFICE | Add | Jaguars (DEF) | $2 |
-| OFFICE | Drop | Bengals (DEF) | |
-| FAMILY | IR | Hunter Henry (TE, NE) | |
-| FAMILY | Add | Mason Taylor (TE, NYJ) | priority #2 |
+| League | Move | Player | Price | By |
+|---|---|---|---|---|
+| OFFICE | Add | Jaydon Blue (RB, PHI) | $30 | Wed waivers |
+| OFFICE | Drop | TreVeyon Henderson (RB, NE) | | Wed waivers |
+| OFFICE | Add | Jaguars (DEF) | $2 | Wed waivers |
+| OFFICE | Drop | Bengals (DEF) | | Wed waivers |
+| FAMILY | IR | Hunter Henry (TE, NE) | | now |
+| FAMILY | Add | Mason Taylor (TE, NYJ) | priority #2 | Wed waivers |
+| FAMILY | Start | Mason Taylor (TE, NYJ) at TE | | Sun 1:00 PM ET |
+| FAMILY | Bench | George Kittle (TE, SF) | | Sun 1:00 PM ET |
 ```
 
 Rules:
@@ -108,7 +112,9 @@ Rules:
 - Always include exactly one `Risk:` bullet. Add a `Week N:` bullet only for a depth gap in a later week.
 - Every league gets one `DEF:` line if it has a DEF slot and one `K:` line if it has a K slot: `Keep <current> (<why, with implied totals>)` or `Stream <new> over <current>, <price> (<why, with implied totals>)`, where the price in a rolling-priority league is `free agency after waivers clear`. A DEF line also gives both opponents' giveaways per game (interceptions plus fumbles lost, not sacks). Add a `QB:` line in the same shape only when the starter is hurt or on bye.
 - With only IR moves, the headline is `FAMILY: No add. <players> to IR.` With no move at all, it is `OFFICE: No move.` Either way, add one bullet saying why there's no add.
-- End with `MOVES` and a table of every roster move from the lines above, one row each for an IR move, add or drop, in the order to make them. Leave out keeps and WATCH players. With no moves in any league, write `MOVES: none.` instead.
+- End with `MOVES` and a table of every roster move from the lines above, one row each for an IR move, add or drop, in the order to make them, then a `Start` row naming the slot and a `Bench` row for each lineup change step 1 made, including each hole an add fills. Leave out keeps and WATCH players. With no moves in any league, write `MOVES: none.` instead.
+- `By` is the deadline. An IR move is `now`. A claim and its drop are the league's waiver run, `Wed waivers` unless the league or the user says otherwise (Wednesday is Sleeper's default), and a free-agent stream is `after waivers`. A `Start` or `Bench` row is the earlier kickoff of the two players, as day, time and ET, from `games.csv` (a player on bye has none).
+- When `fantasy-start-sit` runs after this sweep for the same request, the answer ends with one table: this sweep's IR, Add and Drop rows, then the lineup rows, where start-sit's swap for a slot replaces this sweep's swap for the same slot.
 - No headings, numbered sections, banners, nested lists or bench rankings.
 - At most 3 sources, and only news articles (full URLs). Never list API or data URLs. Sources go just before `MOVES`.
 - Mention a data problem (stale nflverse week, blocked site) only if it changed a call, in one line just before Sources.
