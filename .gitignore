@@ -7,3 +7,4 @@ evals/workspace/*
 !evals/workspace/.claude/
 !evals/workspace/names.go
 !evals/workspace/golf/
+!evals/workspace/waiver/

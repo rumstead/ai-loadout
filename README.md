@@ -151,7 +151,9 @@ label stays. They use promptfoo with the Claude Agent SDK against
 `eval-model:haiku` label says otherwise. They authenticate with a
 `CLAUDE_CODE_OAUTH_TOKEN` repo secret (from `claude setup-token`, billed to
 your Claude plan) or an `ANTHROPIC_API_KEY` one, and read
-`WAIVER_SWEEP_CONTEXT`, the contents of your waiver sweep context file. To run them locally:
+`WAIVER_SWEEP_CONTEXT`, the contents of your waiver sweep context file. A
+second waiver sweep case runs from a saved week in `evals/workspace/waiver/`,
+so its lineup holes, injuries and lines never change. To run them locally:
 
 ```bash
 cd evals && npx -p promptfoo@0.125.1 -p @anthropic-ai/claude-agent-sdk@0.3.316 promptfoo eval
