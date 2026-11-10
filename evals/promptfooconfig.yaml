@@ -105,7 +105,8 @@ tests:
       request: >-
         golf/sessions/2026-10-30-1815-5e1f0a2c in this workspace is a golf-etl session.
         What did the sim show for each swing? Reply with one line per swing and nothing else,
-        either `swing-NN: <club mph>, <ball mph>, <carry raw yd>` or `swing-NN: none`.
+        either `swing-NN: <club mph>, <ball mph>, <carry raw yd>` with numbers only and no units,
+        or `swing-NN: none`.
     assert:
       - type: skill-used
         value: golf-swing-analysis
