@@ -16,6 +16,10 @@ Two failure modes this skill exists to prevent:
 1. **A generic player-by-player writeup** that burns the user's attention on slots they can't change. Most lineups are already 90% correct. The value is in the one or two genuinely contested slots.
 2. **Laundering the platform's projections.** Fantasy apps are good at running leagues and bad at projecting players. Their numbers update slowly, miss role changes, and anchor on last season. Repeating them back as the reason for a decision adds nothing the user can't see on their own screen. Build the case from primary evidence instead.
 
+## Waivers in the same request
+
+If the request also asks about waivers, claims or pickups for a Sleeper league ("start sit waivers", "set my lineup and run waivers"), and `fantasy-waiver-sweep` hasn't run yet in this conversation, invoke the `fantasy-waiver-sweep` skill now, before Step 0, and finish it. Then come back here for the lineup. Its adds count as bench options, and its holes are already filled. Don't price claims or pick drops yourself in that case.
+
 ## Context
 
 If `~/.agents/context/fantasy-start-sit.md` exists, read it first. It can list the user's leagues with their scoring formats and team names, and style rules for the response. Anything in it overrides the defaults below. `context.example.md` shows the fields.
@@ -97,7 +101,7 @@ State which mode you're in and why.
 
 ## Free-agent starts
 
-This skill decides who starts this week. Waiver claims, FAAB bids, bench audits, and drops in a Sleeper league belong to `fantasy-waiver-sweep`. When the request asks for waivers too, the sweep runs first, and its pickups count as bench options here.
+This skill decides who starts this week. Waiver claims, FAAB bids, bench audits, and drops in a Sleeper league belong to `fantasy-waiver-sweep` (see Waivers in the same request).
 
 Look at free agents only for a hole the bench can't fill, or when the user asks whether a specific free agent or streamer should start over a rostered player. Run the same Step 4 evidence on the incumbent and the top two or three real alternatives (the script's `free-agents` command screens a Sleeper league), and ignore the list's projection sort order. Also weigh:
 
@@ -135,8 +139,8 @@ MOVES
 The rows show the format only, with players from a past week and a made-up league name.
 
 - Skip any bullet or line that has nothing real in it. With more than one league, repeat the block per league and write one `MOVES` table at the end.
-- `MOVES` lists every change the user has to make, in the order to make them: a `Start` row naming the slot and a `Bench` row for each swap, plus `Add` and `Drop` rows for a free-agent start. `League` is the short name from the context, or the league's name in capitals.
-- `By` is the deadline. A `Start` or `Bench` row is the earlier kickoff of the two players in the swap, as day, time and ET. A player on bye has no kickoff, so his swap is due by the other player's. An IR move is `now`. A claim and its drop are the league's next waiver run (`Wed waivers` on Sleeper's default), or `now` for a free agent who has cleared waivers.
+- `MOVES` lists every change the user has to make, in the order to make them, one player per row: a `Start` row and a `Bench` row for each swap, plus `Add` and `Drop` rows for a free-agent start. A `Start` row's player always ends with ` at <slot>`, as in `Jauan Jennings (WR, SF) at FLEX`. `League` is the short name from the context, or the league's name in capitals.
+- `By` is the deadline. A `Start` or `Bench` row is the earlier kickoff of the two players in that swap, the one going in and the one coming out, as day, time and ET. Other players in the lineup don't count. A player on bye has no kickoff, so his swap is due by the other player's. An IR move is `now`. A claim and its drop are the league's next waiver run (`Wed waivers` on Sleeper's default), or `now` for a free agent who has cleared waivers.
 - `Price` stays empty for lineup rows and holds the bid or waiver priority for an add.
 - With no changes in any league, write `MOVES: none.` instead of the table.
 - When `fantasy-waiver-sweep` ran for the same request, write one `MOVES` table for both and leave out the sweep's own table: the sweep's IR, Add and Drop rows first, then the lineup rows. Where both name a swap for the same slot, keep this skill's rows and drop the sweep's.
