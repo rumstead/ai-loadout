@@ -4,7 +4,7 @@ description: Evaluate fantasy football start/sit decisions from a lineup, matchu
 license: MIT
 compatibility: Works from a screenshot on any fantasy platform, or from a Sleeper league without one. Needs web search, and a shell with curl and Python for the Sleeper and nflverse data.
 metadata:
-  version: "0.1.0" # x-release-please-version
+  version: "0.2.0" # x-release-please-version
 ---
 
 # Fantasy Start/Sit Evaluation

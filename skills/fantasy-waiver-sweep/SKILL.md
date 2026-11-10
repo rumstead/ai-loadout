@@ -4,7 +4,7 @@ description: Weekly fantasy football waiver sweep for Sleeper leagues. Sets next
 license: MIT
 compatibility: Needs a shell with curl and Python, network access to api.sleeper.app, github.com and raw.githubusercontent.com, and web search. Sleeper leagues only.
 metadata:
-  version: "0.2.0" # x-release-please-version
+  version: "0.3.0" # x-release-please-version
 ---
 
 # Fantasy Waiver Sweep
