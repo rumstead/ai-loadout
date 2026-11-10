@@ -44,11 +44,13 @@ tests:
   # Week 10 of 2026: OFFICE has no TE (Loveland on bye), Deebo Samuel is Out
   # with an open IR slot, and the roster already has five RBs, one of them
   # McCaffrey's backup. Barner plays every snap but scores about 6 a game behind
-  # a backup QB, so he loses to the other TEs on points.
+  # a backup QB, so he loses to the other TEs on points. The saved lineup also
+  # starts Gainwell (TB) and Lemon (PHI), both on bye, with Pollard and DJ Moore
+  # on the bench.
   - description: the waiver sweep fills the lineup hole first and keeps the handcuff
     vars:
       request: >-
-        Run my waiver sweep from the snapshot in waiver/2026-wk10. Use only the
+        Run my waiver sweep from the snapshot in fantasy/2026-wk10. Use only the
         files there, and don't fetch anything or search the web. The snapshot
         README is the context, so ignore ~/.agents/context.
     assert:
@@ -74,11 +76,17 @@ tests:
       - type: javascript
         value: '!/^DEF: [^\n]*use priority|^\| FAMILY \| Add \| [^|]*DEF[^|]*\| [^|]*priority/im.test(output)'
       - type: javascript
-        value: '/^MOVES\n\| League \| Move \| Player \| Price \|$/m.test(output)'
+        value: '/^MOVES\n\| League \| Move \| Player \| Price \| By \|$/m.test(output)'
       - type: javascript
-        value: '/^\| OFFICE \| IR \| (Deebo )?Samuel/m.test(output)'
+        value: '/^\| OFFICE \| IR \| (Deebo )?Samuel[^\n]*\| now \|$/m.test(output)'
       - type: javascript
         value: '/^\| OFFICE \| Add \| [^|]+\(TE, [A-Z]{2,3}\)/m.test(output)'
+      # Every move is in the table, including putting the new TE in the
+      # lineup and benching the starters on bye.
+      - type: javascript
+        value: '/^\| OFFICE \| Start \| [^|]+\(TE, [A-Z]{2,3}\) at TE/m.test(output)'
+      - type: javascript
+        value: '["Loveland", "Gainwell", "Lemon"].every(n => new RegExp(`^\\| OFFICE \\| Bench \\| [^|]*${n}`, "m").test(output))'
       - type: javascript
         value: '!/[\u2013\u2014]/.test(output)'
 
@@ -90,6 +98,72 @@ tests:
         value: fantasy-start-sit
       - type: not-skill-used
         value: fantasy-waiver-sweep
+
+  # FAMILY's saved lineup starts Swift (CHI) and Lemon (PHI), both on bye, and
+  # Diggs plays Thursday. Pollard, Hall and Coker are healthy on the bench, so
+  # both holes fill from the bench without a pickup.
+  - description: start-sit from a Sleeper league fills the bye holes and ends with a moves table
+    vars:
+      request: >-
+        Who should I start this week in FAMILY? Use only the files in
+        fantasy/2026-wk10, and don't fetch anything or search the web. The
+        README there is the context, so ignore ~/.agents/context.
+    assert:
+      - type: skill-used
+        value: fantasy-start-sit
+      - type: not-skill-used
+        value: fantasy-waiver-sweep
+      - type: javascript
+        value: '/^MOVES\n\| League \| Move \| Player \| Price \| By \|$/m.test(output)'
+      - type: javascript
+        value: '["Swift", "Lemon"].every(n => new RegExp(`^\\| FAMILY \\| Bench \\| [^|]*${n}`, "m").test(output))'
+      - type: javascript
+        value: '!/^\| FAMILY \| Start \| [^|]*(Swift|Lemon|Waddle|Worthy|Samuel)/m.test(output)'
+      # The deadline is the earlier kickoff of the two players in a swap.
+      - type: javascript
+        value: |-
+          const rows = output.match(/^\| FAMILY \| Start \|.*$/gm) || [];
+          return rows.length >= 2 && rows.every(r => /\| (Thu|Sat|Sun|Mon) \d{1,2}:\d{2} (AM|PM) ET \|$/.test(r));
+      - type: javascript
+        value: |-
+          const rows = output.match(/^\| FAMILY \| (Start|Bench) \| [^|]*\((QB|RB|WR|TE), (WAS|NYG)\).*$/gm) || [];
+          return rows.every(r => /\| Thu 8:15 PM ET \|$/.test(r));
+      # The bench fills both holes, and drops belong to the waiver sweep.
+      - type: javascript
+        value: '!/^\| FAMILY \| (Add|Drop) \|/m.test(output) && !/^Subject:/m.test(output)'
+      - type: javascript
+        value: '!/[\u2013\u2014]/.test(output)'
+
+  # The request that started this: one ask for lineups and waivers in both
+  # leagues. The sweep runs, start-sit runs on the lineup, and the answer ends
+  # with one table of every move. NE plays at DET at 9:30 AM ET Sunday, so a
+  # Patriots or Lions player in a swap is due by then, or by Thursday night when
+  # the other player in the swap plays WAS at NYG.
+  - description: a start/sit and waivers request runs both skills and ends with one moves table
+    vars:
+      request: >-
+        Start sit waivers for both my sleeper teams. Use only the files in
+        fantasy/2026-wk10, and don't fetch anything or search the web. The
+        README there is the context, so ignore ~/.agents/context.
+    assert:
+      - type: skill-used
+        value: fantasy-waiver-sweep
+      - type: skill-used
+        value: fantasy-start-sit
+      - type: javascript
+        value: '(output.match(/^MOVES$/gm) || []).length === 1 && /^MOVES\n\| League \| Move \| Player \| Price \| By \|$/m.test(output)'
+      - type: javascript
+        value: '/^\| OFFICE \| Add \| [^|]+\(TE, [A-Z]{2,3}\)/m.test(output) && /^\| OFFICE \| Start \| [^|]+\(TE, [A-Z]{2,3}\) at TE/m.test(output)'
+      - type: javascript
+        value: '[["OFFICE", "Loveland"], ["OFFICE", "Gainwell"], ["OFFICE", "Lemon"], ["FAMILY", "Swift"], ["FAMILY", "Lemon"]].every(([l, n]) => new RegExp(`^\\| ${l} \\| Bench \\| [^|]*${n}`, "m").test(output))'
+      - type: javascript
+        value: '!/^\| [A-Z]+ \| Start \| [^|]*(Swift|Lemon|Gainwell|Loveland|Waddle|Worthy|Samuel)/m.test(output)'
+      - type: javascript
+        value: |-
+          const rows = output.match(/^\| [A-Z]+ \| (Start|Bench) \| [^|]*\((QB|RB|WR|TE), (NE|DET)\).*$/gm) || [];
+          return rows.every(r => /\| (Sun 9:30 AM|Thu 8:15 PM) ET \|$/.test(r));
+      - type: javascript
+        value: '!/[\u2013\u2014]/.test(output)'
 
   - description: a style review of a file in the workspace goes to code-quality-review
     vars:
