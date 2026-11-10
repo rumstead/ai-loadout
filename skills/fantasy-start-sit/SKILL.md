@@ -1,8 +1,8 @@
 ---
 name: fantasy-start-sit
-description: Evaluate fantasy football start/sit, waiver, and streaming decisions from a lineup, matchup, roster, or free-agent screenshot, using independent analysis (Vegas lines, snap and target usage, rushing floor, injury news, weather, defensive matchups) rather than the platform's projections. Use this skill whenever the user shares a fantasy lineup, matchup, roster, or player-list image, or asks who to start, who to sit, what to do at flex, whether to swap someone, whether to pick up or stream a player, how their matchup looks, or for help setting a lineup. Trigger even when they don't say the words "start" or "sit". A screenshot of a fantasy matchup or free-agent list with any question attached is enough, as is "run the same analysis for this team" or "check my lineup."
+description: Evaluate fantasy football start/sit decisions from a lineup, matchup, or roster screenshot, or straight from a Sleeper league, using independent analysis (Vegas lines, snap and target usage, rushing floor, injury news, weather, defensive matchups) rather than the platform's projections. Use this skill whenever the user shares a fantasy lineup, matchup, roster, or player-list image, or asks who to start, who to sit, what to do at flex, whether to swap someone, whether a free agent or streamer should start over someone this week, how their matchup looks, or for help setting a lineup. Trigger even when they don't say the words "start" or "sit", as with "check my lineup." Waiver claims, bids, and drops in a Sleeper league belong to fantasy-waiver-sweep. When a request asks for both, run that sweep first, then this skill on the lineup.
 license: MIT
-compatibility: Works from a screenshot on any fantasy platform. Needs web search, and a shell with curl for the Sleeper and nflverse data.
+compatibility: Works from a screenshot on any fantasy platform, or from a Sleeper league without one. Needs web search, and a shell with curl and Python for the Sleeper and nflverse data.
 metadata:
   version: "0.1.0" # x-release-please-version
 ---
@@ -20,15 +20,19 @@ Two failure modes this skill exists to prevent:
 
 If `~/.agents/context/fantasy-start-sit.md` exists, read it first. It can list the user's leagues with their scoring formats and team names, and style rules for the response. Anything in it overrides the defaults below. `context.example.md` shows the fields.
 
+## Data
+
+`scripts/sleeper_data.py` (Python standard library, `--help` for usage) does the fetching and summaries in Steps 1 to 4: `fetch` saves the Sleeper and nflverse files, `lineup` lists both teams in a Sleeper matchup with each player's opponent, kickoff, injury status and byes, `lines` gives the week's kickoffs, implied totals and weather, `usage` gives weekly snaps, touches and points for named players, and `free-agents` ranks available players. Use it rather than writing your own matching: it ties nflverse rows to Sleeper players by `gsis_id`, then full name with suffix plus team, and never by name alone against an inactive player, so a retired namesake can't pass for a starter.
+
 ## Step 0: Confirm scoring format
 
-If the context gives the format for the league in the screenshot, use it and skip this step. Otherwise ask before researching, in one short question. PPR, half-PPR, and standard change receiver and pass-catching-back value enough to flip a flex call. If the user already told you the format earlier in the conversation, don't ask again.
+If the context gives the format for the league, or it's a Sleeper league (`scoring_settings.rec` is 1 for full PPR, 0.5 for half, 0 for standard), use it and skip this step. Otherwise ask before researching, in one short question. PPR, half-PPR, and standard change receiver and pass-catching-back value enough to flip a flex call. If the user already told you the format earlier in the conversation, don't ask again.
 
 Ask only this. Don't stack on questions about league size, roster settings, or record. Infer those from the screenshot.
 
 ## Step 1: Parse the lineup
 
-Read the image carefully and build a mental table before touching any tools.
+Read the image carefully and build a mental table before touching any tools. Without an image, for a Sleeper league, run `fetch` and then `lineup` for each league. Both need IDs: take the Sleeper user ID and league IDs from the context, or look them up from a username with `https://api.sleeper.app/v1/user/<username>` (its `user_id` is `lineup --owner`) and `https://api.sleeper.app/v1/user/<user_id>/leagues/nfl/<season>`, and ask for the username if neither the context nor the conversation has it.
 
 - **Which side is the user's?** Usually left, and usually the one whose team name or handle the user has referenced or the context lists. If genuinely ambiguous, check which side's already-scored players sum to the score shown on that side.
 - **Every starter**: name, position, slot type (a WR in a W/R/T slot is a flex, not a WR slot), NFL team, opponent, kickoff time, and game status.
@@ -40,15 +44,18 @@ Note the app's projections only so you can recognize them later. Do not use them
 
 Then classify each starting slot:
 
+- **Hole**: the starter is on bye or Out. This must change. Fill it from the bench first, and only when nothing eligible is on the bench, look at free agents (see Free-agent starts).
 - **Locked**: the player's game is final or in progress. Nothing to decide. Mention only in one line if a result changes the floor/ceiling calculus.
 - **Not a decision**: the bench holds no eligible alternative (single QB, one kicker, one defense). Say so briefly.
 - **Live**: an eligible bench alternative exists. These are the only slots worth research.
 
-Usually there are one to three live slots. That's the whole job.
+Usually there are one to three live slots, plus any holes. That's the whole job.
 
 ## Step 2: Establish the slate
 
-Get the week from `https://api.sleeper.app/v1/state/nfl` and the week's games, kickoff times, and Vegas lines from `https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv` (`curl -L`, then filter with Python). If the harness has a live sports data tool, use it for game statuses and in-progress scores; otherwise search for them. Don't infer the week from memory; screenshots of past and future weeks look identical.
+Get the week from `https://api.sleeper.app/v1/state/nfl` and the week's games, kickoff times, and Vegas lines from `https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv` (the script's `lines` command reads both). If the harness has a live sports data tool, use it for game statuses and in-progress scores; otherwise search for them. Don't infer the week from memory; screenshots of past and future weeks look identical.
+
+Note the kickoff of every player in a hole or live slot and of each bench option. Sleeper and most platforms lock each player at his own game's kickoff, so a swap has to be made before the earlier of the two players' kickoffs. Flag anything before Sunday 1:00 PM ET: Thursday and Saturday games, and the 9:30 AM ET international games.
 
 ## Step 3: Pull league-wide context once
 
@@ -88,42 +95,51 @@ Then:
 
 State which mode you're in and why.
 
-## Waiver and pickup questions
+## Free-agent starts
 
-When the user shares a free-agent list or asks whether to add a player (including "should I bench X for a waiver pickup"), run the same Step 4 evidence on the incumbent and the top two or three real alternatives. Ignore the list's projection sort order. Also weigh:
+This skill decides who starts this week. Waiver claims, FAAB bids, bench audits, and drops in a Sleeper league belong to `fantasy-waiver-sweep`. When the request asks for waivers too, the sweep runs first, and its pickups count as bench options here.
+
+Look at free agents only for a hole the bench can't fill, or when the user asks whether a specific free agent or streamer should start over a rostered player. Run the same Step 4 evidence on the incumbent and the top two or three real alternatives (the script's `free-agents` command screens a Sleeper league), and ignore the list's projection sort order. Also weigh:
 
 - **Waiver timing**: a player still on waivers may not clear before his game.
-- **Roster cost**: name the player who would be dropped.
+- **Roster cost**: use an open bench spot or an Out player moved to an open IR slot before any drop.
 - **Durability of the role**: a one-week streamer is fine if the user has a droppable body; a fill-in QB whose starter may return is not worth a real asset.
 
-## Drop recommendations
-
-Suggesting a drop is a higher bar than suggesting a start. A bad start costs one week; a bad drop can cost a season. Before naming anyone as droppable:
-
-- **Only suggest a drop when a real roster need exists.** If the user didn't ask about an add, don't volunteer a drop list.
-- **Use current-season usage, never preseason takes.** Check actual snap share, route participation, carries, and targets from games played. A summer article calling someone a "third-down back" is not evidence once real snap counts exist.
-- **Separate snaps from touches.** A back who splits snaps but trails in touches is still one injury away from a full role. That is a hold.
-- **Default to holding early in the season.** Through roughly Week 4, sample sizes are tiny. Prefer dropping players with a clear negative signal: injured and inactive, buried in a committee with no path to more work, or a role that just disappeared.
-- **Rank the whole bench before naming one.** Compare every bench player on role, path to more work, and health. Name only the clear bottom of that list, with the evidence.
-- **Weigh contingency value.** Handcuffs and backs in near-even splits carry value beyond their weekly points.
+**Drops.** A DEF, K or QB stream is one for one, so it drops the player it replaces. Any other drop in a Sleeper league is the sweep's call. On another platform, name one only when the user asked about an add, and only a player whose role shrank two straight weeks, who is buried with no path to more work, or who is injured with no timeline. Judge that from current-season snaps and touches, never preseason takes, and hold the backup to a lead back: the starter's injury is his path to the job.
 
 ## Output format
 
-Keep it to a verdict plus three to four bullets. The user is on a phone.
+Keep it to a verdict plus three to four bullets per league, then one table of moves. The user is on a phone.
 
 ```
-**Verdict: [start X over Y / no changes needed].** [One sentence of why.]
+**[League]: [start X over Y / no changes needed].** [One sentence of why.]
 
-- **[The contested slot]**: the call and the two or three pieces of evidence behind it (usage, implied total, floor), including the strongest counterargument.
+- **[The contested slot or hole]**: the call and the two or three pieces of evidence behind it (usage, implied total, floor), including the strongest counterargument.
 - **[Second contested slot, if any]**: same.
 - **[Confirmations]**: one bullet covering every other live slot that checks out, with the single relevant fact each. Note which slots aren't decisions at all.
 - **[What to watch]**: the biggest risk, and any game-time decision that needs a second look before kickoff.
 
-**Waivers:** [1-2 pickups or streamers that would fix a weak slot, with the usage or environment evidence.]
+**Free agents:** [only for a hole the bench can't fill or a free agent the user asked about, with the usage or environment evidence.]
 **Opponent:** [1-2 weak spots in their lineup: questionable starters, fill-in roles, low implied totals, locked low scores.]
+
+MOVES
+| League | Move | Player | Price | By |
+|---|---|---|---|---|
+| WORK | Start | Jauan Jennings (WR, SF) at FLEX | | Thu 8:15 PM ET |
+| WORK | Bench | Jakobi Meyers (WR, JAX) | | Thu 8:15 PM ET |
+| WORK | Add | Tyler Higbee (TE, LAR) | $2 | Wed waivers |
+| WORK | Start | Tyler Higbee (TE, LAR) at TE | | Sun 4:05 PM ET |
+| WORK | Bench | Sam LaPorta (TE, DET) | | Sun 4:05 PM ET |
 ```
 
-Skip any section that has nothing real in it.
+The rows show the format only, with players from a past week and a made-up league name.
+
+- Skip any bullet or line that has nothing real in it. With more than one league, repeat the block per league and write one `MOVES` table at the end.
+- `MOVES` lists every change the user has to make, in the order to make them: a `Start` row naming the slot and a `Bench` row for each swap, plus `Add` and `Drop` rows for a free-agent start. `League` is the short name from the context, or the league's name in capitals.
+- `By` is the deadline. A `Start` or `Bench` row is the earlier kickoff of the two players in the swap, as day, time and ET. A player on bye has no kickoff, so his swap is due by the other player's. An IR move is `now`. A claim and its drop are the league's next waiver run (`Wed waivers` on Sleeper's default), or `now` for a free agent who has cleared waivers.
+- `Price` stays empty for lineup rows and holds the bid or waiver priority for an add.
+- With no changes in any league, write `MOVES: none.` instead of the table.
+- When `fantasy-waiver-sweep` ran for the same request, write one `MOVES` table for both and leave out the sweep's own table: the sweep's IR, Add and Drop rows first, then the lineup rows. Where both name a swap for the same slot, keep this skill's rows and drop the sweep's.
 
 ## Guidelines that keep the advice honest
 
@@ -135,7 +151,7 @@ Skip any section that has nothing real in it.
 
 **Cite the specific number, and make it a real one.** "Brooks played 38 snaps to Lloyd's 30 and ran 20 pass-pro reps" or "Minnesota's implied total is 21.5 as a 5.5-point underdog" is useful. "Projected for 11.6" is not.
 
-**Handle game-time decisions explicitly.** If a player is a true coin flip, name the fallback and when the news should land. Flag Thursday players whose slot must be set before kickoff.
+**Handle game-time decisions explicitly.** If a player is a true coin flip, name the fallback and when the news should land. Flag any swap due before Sunday 1:00 PM ET (Thursday, Saturday, or a 9:30 AM ET international game).
 
 **Don't pad with locked players.**
 
