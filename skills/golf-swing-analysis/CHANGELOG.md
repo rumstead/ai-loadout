@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/rumstead/ai-loadout/compare/golf-swing-analysis-v0.3.0...golf-swing-analysis-v0.4.0) (2026-11-10)
+
+
+### Features
+
+* **fantasy-waiver-sweep:** fill lineup holes first and end with a moves table ([7bc0afc](https://github.com/rumstead/ai-loadout/commit/7bc0afc2d48c5fa01be103bd28a0b2e514e7a340))
+
+
+### Bug Fixes
+
+* **golf-swing-analysis:** trigger on a session's sim numbers ([11189d8](https://github.com/rumstead/ai-loadout/commit/11189d812454ee1d683e812b443d6d510de0257c))
+
 ## [0.3.0](https://github.com/rumstead/ai-loadout/compare/golf-swing-analysis-v0.2.0...golf-swing-analysis-v0.3.0) (2026-11-09)
 
 
