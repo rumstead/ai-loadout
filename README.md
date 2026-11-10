@@ -11,6 +11,7 @@ ai-loadout/
 ├── .claude-plugin/   # marketplace.json listing the mods
 ├── agents/           # *.agent.md subagents
 ├── skills/           # one folder per skill, each containing a SKILL.md
+├── shared/           # code more than one skill ships, copied in by shared/sync.sh
 └── mods/             # one Claude Code plugin of function hooks per folder
 ```
 
@@ -32,8 +33,8 @@ ai-loadout/
 | `code-quality-review` | Evaluate code idioms, style, design patterns, and architectural fit |
 | `issue-alignment` | Verify PR changes align with a GitHub issue's requirements |
 | `performance-review` | Find performance bottlenecks, scalability and concurrency risks |
-| `fantasy-waiver-sweep` | Weekly Sleeper waiver sweep: bench audit, league-winner pickups, bids, streamers |
-| `fantasy-start-sit` | Start/sit, waiver, and streaming calls from a lineup or matchup screenshot |
+| `fantasy-waiver-sweep` | Weekly Sleeper waiver sweep: lineup holes, bench audit, league-winner pickups, bids, streamers |
+| `fantasy-start-sit` | Start/sit calls from a lineup screenshot or a Sleeper league, ending with a table of moves |
 | `golf-swing-analysis` | Coaching feedback from swing videos or golf-etl sessions |
 
 ### Private context
@@ -142,8 +143,9 @@ also carries `<skill>.zip` for uploading to claude.ai.
 ## Checks
 
 Every PR runs the Agent Skills validator (`skills-ref`), `claude plugin validate`
-and `claude plugin test` on the mods, shellcheck on `install.sh`, and gitleaks
-with an extra rule for Sleeper IDs.
+and `claude plugin test` on the mods, shellcheck on the shell scripts, the
+unit tests under `shared/`, `shared/sync.sh --check`, and gitleaks with an
+extra rule for Sleeper IDs.
 
 Evals run only on a PR labeled `run-evals`, and again on each push while the
 label stays. They use promptfoo with the Claude Agent SDK against
@@ -151,9 +153,10 @@ label stays. They use promptfoo with the Claude Agent SDK against
 `eval-model:haiku` label says otherwise. They authenticate with a
 `CLAUDE_CODE_OAUTH_TOKEN` repo secret (from `claude setup-token`, billed to
 your Claude plan) or an `ANTHROPIC_API_KEY` one, and read
-`WAIVER_SWEEP_CONTEXT`, the contents of your waiver sweep context file. A
-second waiver sweep case runs from a saved week in `evals/workspace/waiver/`,
-so its lineup holes, injuries and lines never change. To run them locally:
+`WAIVER_SWEEP_CONTEXT`, the contents of your waiver sweep context file. The
+other fantasy cases (the waiver sweep, start/sit, and a request for both) run
+from a saved week in `evals/workspace/fantasy/`, so their lineup holes,
+injuries and lines never change. To run them locally:
 
 ```bash
 cd evals && npx -p promptfoo@0.125.1 -p @anthropic-ai/claude-agent-sdk@0.3.316 promptfoo eval
