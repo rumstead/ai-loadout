@@ -70,6 +70,9 @@ tests:
         value: '(output.match(/^K: /gm) || []).length === 1'
       - type: javascript
         value: '(output.match(/^DEF: [^\n]*giveaway/gm) || []).length === 2'
+      # FAMILY uses rolling priority, and a DEF stream never spends it.
+      - type: javascript
+        value: '!/^DEF: [^\n]*use priority|^\| FAMILY \| Add \| [^|]*DEF[^|]*\| [^|]*priority/im.test(output)'
       - type: javascript
         value: '/^MOVES\n\| League \| Move \| Player \| Price \|$/m.test(output)'
       - type: javascript
