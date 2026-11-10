@@ -158,6 +158,9 @@ tests:
         value: '[["OFFICE", "Loveland"], ["OFFICE", "Gainwell"], ["OFFICE", "Lemon"], ["FAMILY", "Swift"], ["FAMILY", "Lemon"]].every(([l, n]) => new RegExp(`^\\| ${l} \\| Bench \\| [^|]*${n}`, "m").test(output))'
       - type: javascript
         value: '!/^\| [A-Z]+ \| Start \| [^|]*(Swift|Lemon|Gainwell|Loveland|Waddle|Worthy|Samuel)/m.test(output)'
+      # One player per row.
+      - type: javascript
+        value: '!/^\| [A-Z]+ \| [A-Za-z]+ \| [^|(]*,/m.test(output)'
       - type: javascript
         value: |-
           const rows = output.match(/^\| [A-Z]+ \| (Start|Bench) \| [^|]*\((QB|RB|WR|TE), (NE|DET)\).*$/gm) || [];

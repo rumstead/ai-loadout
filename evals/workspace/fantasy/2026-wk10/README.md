@@ -20,6 +20,7 @@ This replaces `~/.agents/context/fantasy-waiver-sweep.md` and
   | FAMILY | `league-family.json` | `rosters-family.json` | `matchups-family.json` | full PPR, 10 teams, 3 FLEX, no K |
 
 - Break ties by playoff schedule from Week 11 on in both leagues.
+- No em or en dashes in the response.
 
 ## Files
 
