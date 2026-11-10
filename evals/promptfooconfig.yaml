@@ -41,6 +41,47 @@ tests:
       - type: javascript
         value: '!/^#/m.test(output)'
 
+  # Week 10 of 2026: OFFICE has no TE (Loveland on bye), Deebo Samuel is Out
+  # with an open IR slot, and the roster already has five RBs, one of them
+  # McCaffrey's backup. Barner plays every snap but scores about 6 a game behind
+  # a backup QB, so he loses to the other TEs on points.
+  - description: the waiver sweep fills the lineup hole first and keeps the handcuff
+    vars:
+      request: >-
+        Run my waiver sweep from the snapshot in waiver/2026-wk10. Use only the
+        files there, and don't fetch anything or search the web. The snapshot
+        README is the context, so ignore ~/.agents/context.
+    assert:
+      - type: skill-used
+        value: fantasy-waiver-sweep
+      - type: javascript
+        value: '/^OFFICE: Add [^(\n]+\(TE, [A-Z]{2,3}\)/m.test(output)'
+      - type: javascript
+        value: '!/^OFFICE: Add A\.?J\.? Barner/m.test(output)'
+      - type: javascript
+        value: '/^OFFICE: Add [^\n]* over /m.test(output)'
+      - type: javascript
+        value: '!/^OFFICE:[^\n]*\bdrop (Kaelon )?Black\b|^\| OFFICE \| Drop \| Kaelon Black/im.test(output)'
+      - type: javascript
+        value: '/^OFFICE:[^\n]*Samuel[^\n]*\bIR\b/m.test(output)'
+      - type: javascript
+        value: '(output.match(/^DEF: /gm) || []).length === 2'
+      - type: javascript
+        value: '(output.match(/^K: /gm) || []).length === 1'
+      - type: javascript
+        value: '(output.match(/^DEF: [^\n]*giveaway/gm) || []).length === 2'
+      # FAMILY uses rolling priority, and a DEF stream never spends it.
+      - type: javascript
+        value: '!/^DEF: [^\n]*use priority|^\| FAMILY \| Add \| [^|]*DEF[^|]*\| [^|]*priority/im.test(output)'
+      - type: javascript
+        value: '/^MOVES\n\| League \| Move \| Player \| Price \|$/m.test(output)'
+      - type: javascript
+        value: '/^\| OFFICE \| IR \| (Deebo )?Samuel/m.test(output)'
+      - type: javascript
+        value: '/^\| OFFICE \| Add \| [^|]+\(TE, [A-Z]{2,3}\)/m.test(output)'
+      - type: javascript
+        value: '!/[\u2013\u2014]/.test(output)'
+
   - description: a start/sit question goes to start-sit, not the waiver sweep
     vars:
       request: Half PPR, flex this week is Jaylen Waddle or Rome Odunze. Who do I start? Keep it short.
@@ -64,7 +105,8 @@ tests:
       request: >-
         golf/sessions/2026-10-30-1815-5e1f0a2c in this workspace is a golf-etl session.
         What did the sim show for each swing? Reply with one line per swing and nothing else,
-        either `swing-NN: <club mph>, <ball mph>, <carry raw yd>` or `swing-NN: none`.
+        either `swing-NN: <club mph>, <ball mph>, <carry raw yd>` with numbers only and no units,
+        or `swing-NN: none`.
     assert:
       - type: skill-used
         value: golf-swing-analysis
