@@ -52,7 +52,7 @@ Claude Code only. Each mod is a plugin whose hooks module runs inside the sessio
 
 | Mod | Description |
 |-----|-------------|
-| `checkout-guard` | Shows a band when another Claude session is working in the same git checkout and blocks `checkout`, `switch`, `rebase`, `pull`, `merge`, `stash`, `reset --hard`, `clean`, and `restore` there. Subagents started in a worktree are left alone |
+| `checkout-guard` | Shows a band when another Claude session is working in the same git checkout and blocks `checkout`, `switch`, `rebase`, `pull`, `merge`, `stash`, `reset --hard`, `clean`, and `restore` there, except `pull --ff-only` and `merge --ff-only` on a clean tree. Subagents started in a worktree are left alone. At start, logs a line when the checkout the mods were installed from is behind its upstream |
 | `pr-session` | Renames the session `pr-<repo>-<number>` after the first PR it mentions, unless you named it yourself. Adds `/handoff [note]`, which writes `~/.claude/handoffs/<repo>/<session>.md` for a fresh session to pick up, and `/resume-handoff [name or number]` to list or load them |
 | `session-info` | Adds `<repo>:<branch> · k8s:<kubectl context> · <model> <effort>` to the dim hint line under the prompt, leaving out whatever is unknown. Repo and kube context refresh every 15s and around each turn, effort comes from the request the turn sends |
 

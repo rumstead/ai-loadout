@@ -2,7 +2,8 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Neighbor } from '../types'
-import { gitCallsThatChangeCheckout } from './commands'
+import { gitCallsThatChangeCheckout, isFastForwardOnly } from './commands'
+import { staleCheckoutLine } from './loadout'
 
 const neighbors = atom({ plugin: 'checkout-guard', key: 'neighbors' } as const, [])
 const isDismissed = atom({ plugin: 'checkout-guard', key: 'isDismissed' } as const, false)
@@ -22,9 +23,8 @@ async function home($: EngineInterface): Promise<string> {
   return (await $.env.get('HOME')) || ''
 }
 
-async function sessionsDir($: EngineInterface): Promise<string> {
-  const configDir = (await $.env.get('CLAUDE_CONFIG_DIR')) || `${await home($)}/.claude`
-  return `${configDir}/sessions`
+async function configDir($: EngineInterface): Promise<string> {
+  return (await $.env.get('CLAUDE_CONFIG_DIR')) || `${await home($)}/.claude`
 }
 
 // The checkout a directory belongs to; a worktree is its own checkout.
@@ -34,6 +34,13 @@ async function checkoutOf($: EngineInterface, dirs: string[]): Promise<string | 
   return ran?.exitCode === 0 ? ran.stdout.trim() : undefined
 }
 
+async function isClean($: EngineInterface, checkout: string): Promise<boolean> {
+  const ran = await $.process
+    .run(['git', '-C', checkout, 'status', '--porcelain'])
+    .catch(() => undefined)
+  return ran?.exitCode === 0 && ran.stdout.trim() === ''
+}
+
 async function isRunning($: EngineInterface, pid: number): Promise<boolean> {
   const ran = await $.process.run(['kill', '-0', String(pid)]).catch(() => undefined)
   return ran?.exitCode === 0
@@ -41,7 +48,7 @@ async function isRunning($: EngineInterface, pid: number): Promise<boolean> {
 
 // Other live Claude Code sessions whose working directory is in `checkout`.
 async function neighborsIn($: EngineInterface, checkout: string): Promise<Neighbor[]> {
-  const dir = await sessionsDir($)
+  const dir = `${await configDir($)}/sessions`
   const me = await $.session.id()
   const entries = await $.fs.list(dir).catch(() => [])
   const found: Neighbor[] = []
@@ -69,6 +76,11 @@ async function neighborsIn($: EngineInterface, checkout: string): Promise<Neighb
   return found
 }
 
+async function warnIfStale($: EngineInterface): Promise<void> {
+  const line = await staleCheckoutLine($, await configDir($))
+  if (line !== undefined) $.ui.log(line)
+}
+
 async function refresh($: EngineInterface): Promise<void> {
   const checkout = await checkoutOf($, [])
   const found = checkout === undefined ? [] : await neighborsIn($, checkout)
@@ -88,6 +100,7 @@ export const register: Register = on => {
     const started = await next(e)
     void refresh($)
     $.clock.every(REFRESH_MS, () => void refresh($))
+    if (e.isInteractive) void warnIfStale($)
 
     return started
   })
@@ -131,6 +144,9 @@ export const register: Register = on => {
 
       const found = await neighborsIn($, checkout)
       if (found.length === 0) continue
+      // A fast-forward on a clean tree only moves the branch ahead; there is no
+      // uncommitted work in the checkout for it to clobber.
+      if (isFastForwardOnly(call) && (await isClean($, checkout))) continue
 
       await update($, neighbors, () => found)
       const names = found.map(n => n.name).join(', ')
