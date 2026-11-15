@@ -68,6 +68,9 @@ tests:
     assert:
       - type: skill-used
         value: fantasy-waiver-sweep
+      # The numbers come from the shared script, not code the run wrote itself.
+      - type: javascript
+        value: "(context.providerResponse?.metadata?.toolCalls || []).some(t => t.name === 'Bash' && /sleeper_data\\.py/.test(t.input?.command || ''))"
       - type: javascript
         value: '/^OFFICE: Add [^(\n]+\(TE, [A-Z]{2,3}\)/m.test(output)'
       # The top three available TEs by points per game over their last 4 games
@@ -142,6 +145,9 @@ tests:
     assert:
       - type: skill-used
         value: fantasy-waiver-sweep
+      # The numbers come from the shared script, not code the run wrote itself.
+      - type: javascript
+        value: "(context.providerResponse?.metadata?.toolCalls || []).some(t => t.name === 'Bash' && /sleeper_data\\.py/.test(t.input?.command || ''))"
       - type: javascript
         value: '/^FAMILY: No (move|add)\./m.test(output)'
       - type: javascript
@@ -174,6 +180,9 @@ tests:
     assert:
       - type: skill-used
         value: fantasy-start-sit
+      # The numbers come from the shared script, not code the run wrote itself.
+      - type: javascript
+        value: "(context.providerResponse?.metadata?.toolCalls || []).some(t => t.name === 'Bash' && /sleeper_data\\.py/.test(t.input?.command || ''))"
       - type: not-skill-used
         value: fantasy-waiver-sweep
       - type: javascript
@@ -213,6 +222,9 @@ tests:
     assert:
       - type: skill-used
         value: fantasy-waiver-sweep
+      # The numbers come from the shared script, not code the run wrote itself.
+      - type: javascript
+        value: "(context.providerResponse?.metadata?.toolCalls || []).some(t => t.name === 'Bash' && /sleeper_data\\.py/.test(t.input?.command || ''))"
       - type: skill-used
         value: fantasy-start-sit
       - type: javascript
