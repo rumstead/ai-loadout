@@ -7,6 +7,8 @@ const SEPARATORS = /&&|\|\||[;|\n(){}]|\$\(/
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/
 const PREFIXES = new Set(['command', 'exec', 'time', 'nohup', 'env'])
 
+const FF_MODES = new Set(['--ff', '--no-ff', '--ff-only'])
+
 const unquote = (word: string) => word.replace(/^(['"])(.*)\1$/, '$2')
 
 const expandHome = (path: string, home: string) =>
@@ -36,6 +38,14 @@ export function changesCheckout(subcommand: string, args: string[]): boolean {
     default:
       return false
   }
+}
+
+// Whether a pull or merge can only fast-forward: the last of `--ff-only`,
+// `--ff` and `--no-ff` it is given is `--ff-only`, and it does not rebase.
+export function isFastForwardOnly(call: GitCall): boolean {
+  if (call.subcommand !== 'pull' && call.subcommand !== 'merge') return false
+  if (call.args.some(a => a === '-r' || a.startsWith('--rebase'))) return false
+  return call.args.filter(a => FF_MODES.has(a)).at(-1) === '--ff-only'
 }
 
 export function gitCallsThatChangeCheckout(command: string, home: string): GitCall[] {

@@ -99,6 +99,8 @@ Then:
 
 State which mode you're in and why.
 
+A slot call with no clear edge is a toss-up: say so in its bullet before the evidence. When the user challenges a call, re-rank every option from the same evidence, then name the new fact that changes the answer or hold the pick.
+
 ## Free-agent starts
 
 This skill decides who starts this week. Waiver claims, FAAB bids, bench audits, and drops in a Sleeper league belong to `fantasy-waiver-sweep` (see Waivers in the same request).

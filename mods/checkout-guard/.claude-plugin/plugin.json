@@ -1,7 +1,7 @@
 {
   "name": "checkout-guard",
   "version": "0.1.0",
-  "description": "Warns when another Claude session shares this git checkout and blocks git commands that would move the tree under it",
+  "description": "Warns when another Claude session shares this git checkout and blocks git commands that would move the tree under it, and warns at start when the checkout it was installed from is behind its upstream",
   "author": {
     "name": "rumstead"
   },

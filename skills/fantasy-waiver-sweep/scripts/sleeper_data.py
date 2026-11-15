@@ -17,6 +17,8 @@ the same against a live fetch or a saved snapshot.
     sleeper_data.py free-agents --stats S.csv --snaps N.csv --players players.json \\
         --rosters R.json --games games.csv --season 2026 --week 10 --rec 1
     sleeper_data.py offense --stats S.csv --team NYJ [--team ...]
+    sleeper_data.py bench-audit --league L.json --rosters R.json --players players.json \\
+        --stats S.csv --snaps N.csv --week 10 --owner USER_ID
 """
 
 import argparse
@@ -37,6 +39,7 @@ TEAM_ALIASES = {"LA": "LAR"}
 SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "v"}
 SKILL_POSITIONS = ("QB", "RB", "WR", "TE")
 UNAVAILABLE = {"Out", "IR", "PUP", "Sus", "NA", "Doubtful"}
+INJURED = {"Out", "IR", "PUP"}
 
 
 def team_code(team):
@@ -212,17 +215,22 @@ def describe(pid, players, sched):
     return f"{name} ({p.get('position')}, {team}) {game} {when} {status}".rstrip()
 
 
+def owned_roster(rosters, owner):
+    mine = next(
+        (r for r in rosters if r.get("owner_id") == owner or owner in (r.get("co_owners") or [])), None
+    )
+    if not mine:
+        sys.exit(f"no roster owned by {owner}")
+    return mine
+
+
 def cmd_lineup(args):
     league = read_json(args.league)
     rosters = read_json(args.rosters)
     matchups = read_json(args.matchups)
     players = read_json(args.players)
     sched, byes = schedule(read_csv(args.games), league.get("season", args.season), args.week)
-    mine = next(
-        (r for r in rosters if r.get("owner_id") == args.owner or args.owner in (r.get("co_owners") or [])), None
-    )
-    if not mine:
-        sys.exit(f"no roster owned by {args.owner}")
+    mine = owned_roster(rosters, args.owner)
     me = next(m for m in matchups if m["roster_id"] == mine["roster_id"])
     opp = next((m for m in matchups if m["matchup_id"] == me["matchup_id"] and m["roster_id"] != me["roster_id"]), None)
     slots = league["roster_positions"]
@@ -380,6 +388,82 @@ def cmd_offense(args):
         print(f"{team}: {len(games)} games, sacks allowed {sacks / n:.1f}/g, giveaways {giveaways / n:.1f}/g")
 
 
+def lead_back(pid, players, recent):
+    """The lead back this player backs up: he is his team's RB2 on Sleeper's
+    depth chart, and the RB1 averaged half the snaps or more over his last
+    games."""
+    p = players[pid]
+    if p.get("position") != "RB" or p.get("depth_chart_order") != 2:
+        return None
+    for oid, o in players.items():
+        if o.get("team") == p.get("team") and o.get("position") == "RB" and o.get("depth_chart_order") == 1:
+            snaps = [pct for _, _, pct in recent.get(oid, []) if pct is not None]
+            if snaps and sum(snaps) / len(snaps) >= 0.5:
+                return oid
+    return None
+
+
+def drop_reason(p, recent, protected):
+    """The droppable criterion a bench player meets, or None.
+
+    Role shrank: over his last three games, with at most a bye between any
+    two, snap share and touches both fell each game, and snap share ended at
+    least 10 points below where it started. Buried: under 25% of snaps in each
+    of his last games, or no games at all. The backup to a lead back is never
+    buried or shrinking, since the starter's injury is his path to work.
+    """
+    status = p.get("injury_status")
+    if status in INJURED:
+        return f"injured ({status}), if the news gives no timeline"
+    if protected:
+        return None
+    weeks = [week for week, _, _ in recent]
+    snaps = [pct for _, _, pct in recent]
+    touches = [fnum(r["carries"]) + fnum(r["targets"]) for _, r, _ in recent]
+    straight = len(recent) == 3 and weeks[2] - weeks[0] <= 3 and None not in snaps
+    if (straight and snaps[0] > snaps[1] > snaps[2] and touches[0] > touches[1] > touches[2]
+            and snaps[0] - snaps[2] >= 0.1):
+        return "role shrank two straight weeks"
+    if all(pct is not None and pct < 0.25 for pct in snaps):
+        return "buried, if nothing opens a path to more work"
+    return None
+
+
+def cmd_bench_audit(args):
+    league = read_json(args.league)
+    players = read_json(args.players)
+    mine = owned_roster(read_json(args.rosters), args.owner)
+    rec = fnum(league["scoring_settings"].get("rec"))
+    recent = {}
+    for pid, week, r, pct in usage_rows(read_csv(args.stats), read_csv(args.snaps), PlayerIndex(players),
+                                        until=args.week):
+        if pid:
+            recent.setdefault(pid, []).append((week, r, pct))
+    recent = {pid: sorted(games, key=lambda x: x[0])[-3:] for pid, games in recent.items()}
+    out = set(mine.get("starters") or []) | set(mine.get("reserve") or [])
+    print(f"{league.get('name')}: bench, last 3 games before week {args.week}, points at rec {rec:g}")
+    for pid in mine.get("players") or []:
+        p = players.get(pid)
+        if pid in out or not p or p.get("position") not in SKILL_POSITIONS:
+            continue
+        games = recent.get(pid, [])
+        lead = lead_back(pid, players, recent)
+        if games:
+            weeks = ",".join(str(w) for w, _, _ in games)
+            snaps = ",".join(f"{pct * 100:.0f}" if pct is not None else "?" for _, _, pct in games)
+            touches = ",".join(str(int(fnum(r["carries"]) + fnum(r["targets"]))) for _, r, _ in games)
+            pts = ",".join(f"{fantasy_points(r, rec):.1f}" for _, r, _ in games)
+            usage = f"wk {weeks} snaps {snaps} touches {touches} pts {pts}"
+        else:
+            usage = f"no games before week {args.week}"
+        reason = drop_reason(p, games, lead)
+        line = (f"  {p['full_name']:<24} {p.get('position', '?'):<3}{p.get('team') or 'FA':<4}"
+                f"{p.get('injury_status') or 'healthy':<12}| {usage} | droppable: {reason or 'none'}")
+        if lead:
+            line += f" | protected: backup to {players[lead]['full_name']}"
+        print(line)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -427,6 +511,12 @@ def main(argv=None):
     p.add_argument("--stats", required=True)
     p.add_argument("--team", action="append", required=True)
     p.set_defaults(func=cmd_offense)
+
+    p = sub.add_parser("bench-audit", help="each bench player's last 3 games and the droppable criterion he meets")
+    for flag in ("--league", "--rosters", "--players", "--stats", "--snaps", "--owner"):
+        p.add_argument(flag, required=True)
+    p.add_argument("--week", type=int, required=True, help="the week being set, games before it count")
+    p.set_defaults(func=cmd_bench_audit)
 
     args = ap.parse_args(argv)
     args.func(args)

@@ -11,6 +11,10 @@ You are a senior engineering lead conducting a comprehensive PR review. You orch
 
 ### 1. Gather Context
 
+Before anything else, confirm the target: state the PR number, title, and state in one line. If the number is an issue rather than a PR, list the PRs that reference it and review the one that claims to fix it, saying so.
+
+Do not run the PR's code or tests; the harness blocks it. Read the CI result instead (`gh pr checks <PR#>` at the head SHA) and say "tests not run, CI <status>" in one line. Tag each claim about runtime behavior as read from code or shown by CI.
+
 Accept one or more issue URLs or numbers. Fetch the PR details before deciding whether alignment applies, then identify every linked issue from the PR metadata (including closing references and the PR body). Combine those with any issues the user explicitly supplied and deduplicate them. If no linked issue can be identified, skip alignment and mark the Alignment Verdict as N/A with the note "No linked issue found."
 
 - When GitHub-native tools are available, use `github/pull_request_read` to fetch the PR details, diff, changed-file list, and linked issues; use `github/issue_read` to fetch each linked issue; and use `github/list_commits` to get the PR commit messages.
@@ -90,8 +94,17 @@ Only when the user asks to put the findings on the PR:
 1. Create a pending review (`github/pull_request_review_write` with method `create`, no event).
 2. Add one comment per finding with `github/add_comment_to_pending_review`, anchored to the PR diff lines. Findings about unchanged files go in the review body or as a file-level comment on the nearest changed file.
 3. Write comments in the user's voice. Before drafting any staged comment, you MUST read the `writing-as-rumstead` tone rules and apply them to every comment. Read it directly at `$HOME/ai-loadout/skills/writing-as-rumstead/SKILL.md`, or at the installed symlink `$HOME/.claude/skills/writing-as-rumstead/SKILL.md`. Both live OUTSIDE the workspace, so a workspace-scoped `file_search`/glob will NOT find them. NEVER conclude the file is absent because a glob returned nothing; only a failed read of both absolute paths counts as absent. Only then fall back to your best judgment of the user's tone based on their prior review comments on the PR, the repository, or this session. Never use em dashes.
-4. Stage only the findings from the "Worth Commenting On" section, one comment each. Expect to post far fewer comments than the table holds, and expect the user to cut more still.
+4. Stage the findings from the "Worth Commenting On" section, one comment each, plus any "Optional Nits" the user picks. Expect the user to cut some.
 5. NEVER submit the pending review. The user edits and submits it themselves.
+
+### Re-review
+
+When asked to review the same PR again (a "re review" request, or a continued session after new commits), the user wants to know what to comment on now, not the history. Review the new head, then report only:
+
+- **Worth Commenting On** and **Optional Nits** for the current head, in the same form as a first review.
+- One line per earlier finding: `fixed`, `still open` (with its current `file:line`), or `no longer applies`.
+
+Leave out the full table, Checked and Found Clean, and any narrative of earlier rounds unless the user asks.
 
 ## Output Format
 
@@ -101,6 +114,18 @@ Only when the user asks to put the findings on the PR:
 **Issues**: #<number> — <title>; #<number> — <title>
 **Branch**: <branch name>
 **Files Changed**: <count>
+**Line refs**: <ref>. Tests not run, CI <status>.
+
+## Worth Commenting On
+
+<The findings that would actually change what the author does, most important
+first. One entry each: `file:line` at the PR head, then the problem and what the
+author would change, in a sentence or two. An empty list is a legitimate outcome.>
+
+## Optional Nits
+
+<Low rows that are cheap to fix, each as a one-line `NIT:` comment draft anchored
+to `file:line`. Lead with the ask, then the reason. The user picks which to post.>
 
 ## Alignment Verdict: <✅/⚠️/❌/N/A> <Fully Aligned / Partially Aligned / Misaligned / N/A>
 <!-- Use ✅ when all stated requirements are addressed; ⚠️ when at least one requirement is partially addressed but not fully implemented; ❌ when one or more requirements are entirely absent from the diff. -->
@@ -116,14 +141,7 @@ Only when the user asks to put the findings on the PR:
 | 3 | Medium | ... | ... | ... | ... | ... |
 | 4 | Low | ... | ... | ... | ... | ... |
 
-Every finding regardless of severity gets its own row in the table. The summary counts are derived from the table rows.
-
-## Worth Commenting On
-
-<The subset of the table above that would actually change what the author does.
-Name each one in a sentence and say what the author would change. Everything else
-stays in the table as a record and is not commented on. This list is usually much
-shorter than the table, and an empty list is a legitimate outcome.>
+Every finding regardless of severity gets its own row in the table. The summary counts are derived from the table rows. Rows not listed under Worth Commenting On or Optional Nits stay here as a record.
 
 ## Checked and Found Clean
 
@@ -149,5 +167,7 @@ Do NOT emit review-event vocabulary such as APPROVE or REQUEST CHANGES. Choosing
 the review action is the user's call, not the report's, and a report that names the
 button pushes the framing of the whole review.>
 ```
+
+The same applies to whoever relays this report: summarize the findings and the comments worth posting, and leave the review action to the user.
 
 Sort all issues by severity (Critical → High → Medium → Low). Deduplicate findings that refer to the same file, same line range (within 5 lines), and the same root cause. If two findings share a root cause but affect different locations, keep both and cross-reference them.
