@@ -41,3 +41,9 @@ jobs:
           name="$(basename "$SKILL_PATH")"
           (cd skills && zip -qr "../$name.zip" "$name")
           gh release upload "$TAG" "$name.zip"
+          line="Re-upload $name.zip to claude.ai to update the skill there."
+          gh release view "$TAG" --json body --jq .body > notes.md
+          if ! grep -qxF "$line" notes.md; then
+            printf '\n%s\n' "$line" >> notes.md
+            gh release edit "$TAG" --notes-file notes.md
+          fi
