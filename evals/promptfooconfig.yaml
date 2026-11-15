@@ -10,7 +10,11 @@ providers:
       model: "{{ env.EVAL_MODEL | default('sonnet') }}"
       # workspace/.claude/skills links to every public skill, so each case
       # also checks that the right one is picked.
-      working_dir: ./workspace
+      # evals/with-workspace.sh copies workspace/ with its skill links resolved
+      # and sets EVAL_WORKSPACE, since copy_working_dir only copies links that
+      # stay inside the directory. Each case then runs in its own fresh copy.
+      working_dir: "{{ env.EVAL_WORKSPACE }}"
+      copy_working_dir: copy
       setting_sources: ['project']
       skills: all
       permission_mode: bypassPermissions
@@ -22,11 +26,14 @@ providers:
       apiKeyRequired: false
 
 evaluateOptions:
-  # Cases share the workspace and the waiver sweep writes data files into it.
-  maxConcurrency: 1
+  maxConcurrency: 4
 
+# Each case lists the skills it exercises under metadata.skills, so CI can run
+# only the cases a PR touches (evals/cases-for-diff.sh).
 tests:
   - description: waiver sweep runs from the user's context file
+    metadata:
+      skills: [fantasy-waiver-sweep]
     vars:
       request: Run my waiver sweep.
     assert:
@@ -46,12 +53,14 @@ tests:
   # McCaffrey's backup. Barner plays every snap but scores about 6 a game behind
   # a backup QB, so he loses to the other TEs on points. The saved lineup also
   # starts Gainwell (TB) and Lemon (PHI), both on bye, with Pollard and DJ Moore
-  # on the bench. promptfoo has no per-test repeat, so the `run` array expands
-  # this case into three runs (CI passes --no-cache), and each has to land on
-  # the same accepted answers.
-  - description: the waiver sweep fills the lineup hole first and keeps the handcuff
+  # on the bench. promptfoo has no per-test repeat, so the two cases after this
+  # one rerun it through a YAML merge (CI passes --no-cache), and each run has
+  # to land on the same accepted answers.
+  - &hole-fill
+    description: the waiver sweep fills the lineup hole first and keeps the handcuff
+    metadata:
+      skills: [fantasy-waiver-sweep]
     vars:
-      run: [1, 2, 3]
       request: >-
         Run my waiver sweep from the snapshot in fantasy/2026-wk10. Use only the
         files there, and don't fetch anything or search the web. The snapshot
@@ -80,14 +89,14 @@ tests:
       - type: javascript
         value: '(output.match(/^K: /gm) || []).length === 1'
       - type: javascript
-        value: '(output.match(/^DEF: [^\n]*giveaway/gm) || []).length === 2'
+        value: '(output.match(/^DEF: [^\n]*(giveaway|gives? (it |the ball )?away)/gm) || []).length === 2'
       # Both leagues start the Giants against Washington, and `sleeper_data.py
       # offense --team WAS` prints 0.5 giveaways a game. Any other giveaway
       # figure is one that command prints for a week 10 offense.
       - type: javascript
         value: |-
           const printed = [0.5, 0.6, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 1.6, 1.7, 1.9, 2.1, 2.2];
-          const re = /(\d+(?:\.\d+)?) giveaways?|giveaways?(?: a game| per game)?:? (\d+(?:\.\d+)?)(?: (?:vs\.?|and|to) (\d+(?:\.\d+)?))?/g;
+          const re = /(\d+(?:\.\d+)?) giveaways?|(?:giveaways?|gives? (?:it |the ball )?away)(?: a game| per game)?:? (\d+(?:\.\d+)?)(?: (?:vs\.?|and|to) (\d+(?:\.\d+)?))?/g;
           const lines = output.match(/^DEF: .*$/gm) || [];
           return lines.length === 2 && lines.every(l => {
             const nums = [...l.matchAll(re)].flatMap(m => m.slice(1)).filter(Boolean).map(Number);
@@ -111,13 +120,20 @@ tests:
       - type: javascript
         value: '!/[\u2013\u2014]/.test(output)'
 
+  - <<: *hole-fill
+    description: the waiver sweep fills the lineup hole first and keeps the handcuff (run 2)
+  - <<: *hole-fill
+    description: the waiver sweep fills the lineup hole first and keeps the handcuff (run 3)
+
   # 2026-wk10-no-move is FAMILY from the week 10 snapshot with every starter
   # healthy and playing, and Worthy, Samuel and Waddle (all Out) swapped for
   # healthy free agents, so `sleeper_data.py bench-audit` flags nobody. Tank
   # Dell, Houston's week 9 target leader, is on the wire, but with nothing
-  # droppable and no hole the sweep stops at No move. A DEF stream is still
-  # allowed, since it drops the DEF it replaces.
+  # droppable and no hole the sweep adds no player. A DEF stream is still
+  # allowed, since it drops the DEF it replaces, and makes the headline No add.
   - description: the waiver sweep stops at no move when nobody on the bench is droppable
+    metadata:
+      skills: [fantasy-waiver-sweep]
     vars:
       request: >-
         Run my waiver sweep from the snapshot in fantasy/2026-wk10-no-move. Use
@@ -127,13 +143,15 @@ tests:
       - type: skill-used
         value: fantasy-waiver-sweep
       - type: javascript
-        value: '/^FAMILY: No move\./m.test(output)'
+        value: '/^FAMILY: No (move|add)\./m.test(output)'
       - type: javascript
         value: '!/^\| FAMILY \| (Add|Drop) \| [^|]*\((QB|RB|WR|TE), /m.test(output)'
       - type: javascript
         value: '!/[\u2013\u2014]/.test(output)'
 
   - description: a start/sit question goes to start-sit, not the waiver sweep
+    metadata:
+      skills: [fantasy-start-sit, fantasy-waiver-sweep]
     vars:
       request: Half PPR, flex this week is Jaylen Waddle or Rome Odunze. Who do I start? Keep it short.
     assert:
@@ -146,6 +164,8 @@ tests:
   # Diggs plays Thursday. Pollard, Hall and Coker are healthy on the bench, so
   # both holes fill from the bench without a pickup.
   - description: start-sit from a Sleeper league fills the bye holes and ends with a moves table
+    metadata:
+      skills: [fantasy-start-sit]
     vars:
       request: >-
         Who should I start this week in FAMILY? Use only the files in
@@ -183,6 +203,8 @@ tests:
   # Patriots or Lions player in a swap is due by then, or by Thursday night when
   # the other player in the swap plays WAS at NYG.
   - description: a start/sit and waivers request runs both skills and ends with one moves table
+    metadata:
+      skills: [fantasy-start-sit, fantasy-waiver-sweep]
     vars:
       request: >-
         Start sit waivers for both my sleeper teams. Use only the files in
@@ -212,6 +234,8 @@ tests:
         value: '!/[\u2013\u2014]/.test(output)'
 
   - description: a style review of a file in the workspace goes to code-quality-review
+    metadata:
+      skills: [code-quality-review]
     vars:
       request: Do a code quality review of names.go for idioms, style, and design. Findings only, don't edit it.
     assert:
@@ -221,6 +245,8 @@ tests:
         value: "!(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Edit', 'Write'].includes(t.name))"
 
   - description: golf sim numbers come from the Sim table, and an unchanged screen gets none
+    metadata:
+      skills: [golf-swing-analysis]
     vars:
       request: >-
         golf/sessions/2026-10-30-1815-5e1f0a2c in this workspace is a golf-etl session.

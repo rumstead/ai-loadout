@@ -161,11 +161,19 @@ your Claude plan) or an `ANTHROPIC_API_KEY` one, and read
 `WAIVER_SWEEP_CONTEXT`, the contents of your waiver sweep context file. The
 other fantasy cases (the waiver sweep, start/sit, and a request for both) run
 from a saved week in `evals/workspace/fantasy/`, so their lineup holes,
-injuries and lines never change. To run them locally:
+injuries and lines never change.
+
+Each case runs in its own copy of `evals/workspace`, four at a time, and CI
+runs only the cases tagged with a skill the PR changes
+(`evals/cases-for-diff.sh`). A change to the eval config, scripts or workflow
+runs them all. To run them locally:
 
 ```bash
-cd evals && npx -p promptfoo@0.125.1 -p @anthropic-ai/claude-agent-sdk@0.3.316 promptfoo eval
+evals/with-workspace.sh npx -p promptfoo@0.125.1 -p @anthropic-ai/claude-agent-sdk@0.3.316 \
+  promptfoo eval -c evals/promptfooconfig.yaml
 ```
+
+Add `--filter-metadata skills=<skill>` to run one skill's cases.
 
 ## License
 
