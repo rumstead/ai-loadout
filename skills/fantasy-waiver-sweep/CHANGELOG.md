@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/rumstead/ai-loadout/compare/fantasy-waiver-sweep-v0.3.0...fantasy-waiver-sweep-v0.4.0) (2026-11-15)
+
+
+### Features
+
+* **fantasy:** add a bench-audit command to the sleeper data script ([75856c3](https://github.com/rumstead/ai-loadout/commit/75856c332e56ff4fa59d3cd032e67ba924d7a950))
+
+
+### Bug Fixes
+
+* **fantasy-waiver-sweep:** take the drop from the bench audit's droppable set and hold a pick under a challenge ([f5e44da](https://github.com/rumstead/ai-loadout/commit/f5e44daee8397bb5668e8440e33b24f20fe7be1d))
+
 ## [0.3.0](https://github.com/rumstead/ai-loadout/compare/fantasy-waiver-sweep-v0.2.0...fantasy-waiver-sweep-v0.3.0) (2026-11-10)
 
 
