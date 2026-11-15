@@ -46,6 +46,11 @@ defaults. It lives outside the skill folder, so installing or upgrading a skill
 leaves it alone. `context.example.md` in the skill folder lists the fields.
 Without it, the skill takes what it needs from the conversation or asks.
 
+`golf-swing-analysis` also reads a `golfer.md` at the root of your golf-etl
+sessions repo (handicap, usual miss, what you are working on, and a log of past
+sessions), so a chat that cannot read your home directory, such as claude.ai,
+still has it. `golfer.example.md` in the skill folder is the template.
+
 ### Mods
 
 Claude Code only. Each mod is a plugin whose hooks module runs inside the session.
