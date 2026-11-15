@@ -26,7 +26,7 @@ If `~/.agents/context/fantasy-start-sit.md` exists, read it first. It can list t
 
 ## Data
 
-`scripts/sleeper_data.py` (Python standard library, `--help` for usage) does the fetching and summaries in Steps 1 to 4: `fetch` saves the Sleeper and nflverse files, `lineup` lists both teams in a Sleeper matchup with each player's opponent, kickoff, injury status and byes, `lines` gives the week's kickoffs, implied totals and weather, `usage` gives weekly snaps, touches and points for named players, and `free-agents` ranks available players. Use it rather than writing your own matching: it ties nflverse rows to Sleeper players by `gsis_id`, then full name with suffix plus team, and never by name alone against an inactive player, so a retired namesake can't pass for a starter.
+`scripts/sleeper_data.py` (Python standard library, `--help` for usage) does the fetching and summaries in Steps 1 to 4: `fetch` saves the Sleeper and nflverse files, `lineup` lists both teams in a Sleeper matchup with each player's opponent, kickoff, injury status and byes, `lines` gives the week's kickoffs, implied totals and weather, `usage` gives weekly snaps, touches and points for named players, and `free-agents` ranks available players. Every roster, availability and points figure comes from its output. Never write your own Python to match players across `players.json`, the rosters and nflverse: the script ties nflverse rows to Sleeper players by `gsis_id`, then full name with suffix plus team, and never by name alone against an inactive player, so neither a retired namesake nor a rostered `Kyle Pitts Sr.` read as `Kyle Pitts` can pass for an available player.
 
 ## Step 0: Confirm scoring format
 
