@@ -19,7 +19,7 @@ If `~/.agents/context/fantasy-waiver-sweep.md` exists, read it first. It names t
 
 Fetch everything with `curl` (`-L` for GitHub), save it to disk, and analyze it with Python. Don't print the big files. Never guess the week.
 
-`scripts/sleeper_data.py` (Python standard library, `--help` for usage) covers most of this: `fetch` saves every file below for the given leagues, `lineup` shows the user's starters, bench and IR with byes and kickoffs, `lines` gives the week's kickoffs, implied totals and weather, `usage` and `free-agents` give snap, touch and points trends in the league's scoring, `bench-audit` gives each bench player's last 3 games and the droppable criterion he meets, and `offense` gives an offense's sacks allowed and giveaways per game for DEF calls. Use it rather than writing your own matching: it ties nflverse rows to Sleeper players by `gsis_id`, then full name with suffix plus team, and never by name alone against an inactive player, so a retired namesake can't pass for an available starter.
+`scripts/sleeper_data.py` (Python standard library, `--help` for usage) covers most of this: `fetch` saves every file below for the given leagues, `lineup` shows the user's starters, bench and IR with byes and kickoffs, `lines` gives the week's kickoffs, implied totals and weather, `usage` and `free-agents` give snap, touch and points trends in the league's scoring, `bench-audit` gives each bench player's last 3 games and the droppable criterion he meets, and `offense` gives an offense's sacks allowed and giveaways per game for DEF calls. Every roster, availability, points and giveaway figure comes from its output. Never write your own Python to match players across `players.json`, the rosters and nflverse: the script ties nflverse rows to Sleeper players by `gsis_id`, then full name with suffix plus team, and never by name alone against an inactive player, so neither a retired namesake nor a rostered `Kyle Pitts Sr.` read as `Kyle Pitts` can pass for an available player.
 
 - **Sleeper public API** (`https://api.sleeper.app/v1`):
   - `/state/nfl`: `season` and `week`.
@@ -49,6 +49,8 @@ Read each league's format from `/league/<id>`:
 In a keeper or dynasty league, weigh next season too: a young player with a growing role is worth more than this week's points suggest.
 
 ## Process
+
+Run `scripts/sleeper_data.py` for the rosters, availability, points and giveaways in every step below. Your own Python is only for what it has no command for, and never for matching players.
 
 If the request also asks who to start ("start sit waivers", "set my lineup and run waivers"), finish steps 1 to 7, then invoke the `fantasy-start-sit` skill for the close lineup calls before writing the output, and write one answer for both.
 
