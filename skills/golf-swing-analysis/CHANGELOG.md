@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/rumstead/ai-loadout/compare/golf-swing-analysis-v0.4.1...golf-swing-analysis-v0.5.0) (2026-11-15)
+
+
+### Features
+
+* **golf-swing-analysis:** read the golfer file and session index, log each review, and fix the angle calls ([5dc1057](https://github.com/rumstead/ai-loadout/commit/5dc1057d2b240c1cf740e829c72aaaa55f724709))
+
 ## [0.4.1](https://github.com/rumstead/ai-loadout/compare/golf-swing-analysis-v0.4.0...golf-swing-analysis-v0.4.1) (2026-11-15)
 
 

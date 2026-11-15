@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/rumstead/ai-loadout/compare/fantasy-start-sit-v0.2.0...fantasy-start-sit-v0.3.0) (2026-11-15)
+
+
+### Features
+
+* **fantasy:** add a bench-audit command to the sleeper data script ([75856c3](https://github.com/rumstead/ai-loadout/commit/75856c332e56ff4fa59d3cd032e67ba924d7a950))
+
+
+### Bug Fixes
+
+* **fantasy-start-sit:** call a close slot a toss-up and hold it under a challenge ([cb91dfa](https://github.com/rumstead/ai-loadout/commit/cb91dfa5868dc400bec679eb89491c049eb42661))
+
 ## [0.2.0](https://github.com/rumstead/ai-loadout/compare/fantasy-start-sit-v0.1.0...fantasy-start-sit-v0.2.0) (2026-11-10)
 
 
