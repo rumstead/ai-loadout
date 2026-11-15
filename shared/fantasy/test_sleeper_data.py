@@ -107,6 +107,45 @@ class PointsTest(unittest.TestCase):
         self.assertEqual(sd.fantasy_points(row, 1), 14.0)
 
 
+class DropReasonTest(unittest.TestCase):
+    def games(self, *weeks):
+        return [(w, {"carries": str(car), "targets": "0"}, pct) for w, pct, car in weeks]
+
+    def test_role_shrank_needs_snaps_and_touches_to_fall(self):
+        healthy = {"injury_status": None}
+        shrank = self.games((6, 0.7, 15), (7, 0.55, 10), (8, 0.4, 6))
+        self.assertEqual(sd.drop_reason(healthy, shrank, None), "role shrank two straight weeks")
+        touches_up = self.games((6, 0.7, 15), (7, 0.55, 18), (8, 0.4, 6))
+        self.assertIsNone(sd.drop_reason(healthy, touches_up, None))
+        small_dip = self.games((6, 0.82, 15), (7, 0.8, 10), (8, 0.79, 6))
+        self.assertIsNone(sd.drop_reason(healthy, small_dip, None))
+
+    def test_role_shrank_skips_a_gap_longer_than_a_bye(self):
+        back_from_injury = self.games((2, 0.65, 21), (3, 0.48, 16), (9, 0.43, 15))
+        self.assertIsNone(sd.drop_reason({}, back_from_injury, None))
+
+    def test_buried_unless_he_backs_up_a_lead_back(self):
+        buried = self.games((7, 0.1, 2), (8, 0.15, 3), (9, 0.05, 1))
+        self.assertTrue(sd.drop_reason({}, buried, None).startswith("buried"))
+        self.assertTrue(sd.drop_reason({}, [], None).startswith("buried"))
+        self.assertIsNone(sd.drop_reason({}, buried, "4034"))
+
+    def test_injured_even_when_protected(self):
+        self.assertTrue(sd.drop_reason({"injury_status": "Out"}, [], "4034").startswith("injured (Out)"))
+
+    def test_lead_back_needs_a_starter_with_half_the_snaps(self):
+        players = {
+            "1": {"full_name": "Lead Back", "position": "RB", "team": "SF", "depth_chart_order": 1},
+            "2": {"full_name": "Handcuff", "position": "RB", "team": "SF", "depth_chart_order": 2},
+            "3": {"full_name": "Committee Back", "position": "RB", "team": "SEA", "depth_chart_order": 1},
+            "4": {"full_name": "Committee Two", "position": "RB", "team": "SEA", "depth_chart_order": 2},
+        }
+        recent = {"1": self.games((8, 0.7, 20), (9, 0.75, 22)), "3": self.games((8, 0.45, 12), (9, 0.4, 10))}
+        self.assertEqual(sd.lead_back("2", players, recent), "1")
+        self.assertIsNone(sd.lead_back("4", players, recent))
+        self.assertIsNone(sd.lead_back("1", players, recent))
+
+
 @unittest.skipUnless(os.path.isdir(SNAPSHOT), "eval snapshot not present")
 class SnapshotTest(unittest.TestCase):
     def run_cmd(self, *argv):
@@ -159,6 +198,27 @@ class SnapshotTest(unittest.TestCase):
         self.assertNotIn("snap    ?", out)
         self.assertIn("Deebo Samuel Sr.", out)
         self.assertIn("Nobody Atall: no Sleeper player matched", out)
+
+    def bench_audit(self, snapshot, league):
+        d = SNAPSHOT + snapshot
+        return self.run_cmd(
+            "bench-audit", "--league", os.path.join(d, f"league-{league}.json"),
+            "--rosters", os.path.join(d, f"rosters-{league}.json"), "--players", os.path.join(d, "players.json"),
+            "--stats", os.path.join(d, "stats_player_week_2026.csv"),
+            "--snaps", os.path.join(d, "snap_counts_2026.csv"), "--week", "10", "--owner", "me",
+        )
+
+    def test_bench_audit_protects_the_handcuff(self):
+        out = self.bench_audit("", "office")
+        self.assertRegex(out, r"Kaelon Black .*\| droppable: none \| protected: backup to Christian McCaffrey")
+        self.assertRegex(out, r"Deebo Samuel Sr\. .*\| droppable: injured \(Out\)")
+        self.assertRegex(out, r"Tony Pollard .*wk 6,7,8 snaps 76,75,82 touches 20,28,26 pts 7\.6,35\.0,27\.2")
+        self.assertNotIn("Colston Loveland", out)
+
+    def test_bench_audit_no_move_snapshot_has_nobody_droppable(self):
+        rows = [line for line in self.bench_audit("-no-move", "family").splitlines() if line.startswith("  ")]
+        self.assertEqual(len(rows), 7)
+        self.assertTrue(all("| droppable: none" in r for r in rows), rows)
 
     def test_offense(self):
         out = self.run_cmd("offense", "--stats", self.path("stats_player_week_2026.csv"), "--team", "LA")
