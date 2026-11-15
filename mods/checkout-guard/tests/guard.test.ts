@@ -71,6 +71,7 @@ test('shows the band with the other session once it has blocked', async ($, on) 
     component: 'AbovePrompt',
     props: {
       hasSurvey: false,
+      isCollapsed: false,
       isWorking: false,
       maxRows: 4,
       bodyColumns: 160,
