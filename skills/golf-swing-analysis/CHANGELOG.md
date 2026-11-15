@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/rumstead/ai-loadout/compare/golf-swing-analysis-v0.4.0...golf-swing-analysis-v0.4.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **golf-swing-analysis:** take carry (game) and total from the sim table, not the after-shot frame ([4477bdc](https://github.com/rumstead/ai-loadout/commit/4477bdcdfa30e5b09be2d45f65d9d1d55c973d55))
+
 ## [0.4.0](https://github.com/rumstead/ai-loadout/compare/golf-swing-analysis-v0.3.0...golf-swing-analysis-v0.4.0) (2026-11-10)
 
 
