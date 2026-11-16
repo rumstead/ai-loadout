@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/rumstead/ai-loadout/compare/fantasy-waiver-sweep-v0.4.0...fantasy-waiver-sweep-v0.4.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **fantasy-waiver-sweep:** take every roster and points figure from sleeper_data.py ([ce8dc2e](https://github.com/rumstead/ai-loadout/commit/ce8dc2ea185c6d64c11cff7342fb7315c5bb480b))
+
 ## [0.4.0](https://github.com/rumstead/ai-loadout/compare/fantasy-waiver-sweep-v0.3.0...fantasy-waiver-sweep-v0.4.0) (2026-11-15)
 
 

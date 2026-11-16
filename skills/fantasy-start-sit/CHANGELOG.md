@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/rumstead/ai-loadout/compare/fantasy-start-sit-v0.3.0...fantasy-start-sit-v0.3.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **fantasy-start-sit:** take every roster and points figure from sleeper_data.py ([5a3e885](https://github.com/rumstead/ai-loadout/commit/5a3e885fb5ebb04a84feae3a1ac252c8813bc32f))
+
 ## [0.3.0](https://github.com/rumstead/ai-loadout/compare/fantasy-start-sit-v0.2.0...fantasy-start-sit-v0.3.0) (2026-11-15)
 
 
