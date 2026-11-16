@@ -4,7 +4,7 @@ description: Analyze golf swings from uploaded videos or from golf-etl session f
 license: MIT
 compatibility: Uploaded videos need a shell with ffmpeg. golf-etl sessions need access to the GitHub repo that holds them.
 metadata:
-  version: "0.5.0" # x-release-please-version
+  version: "0.6.0" # x-release-please-version
 ---
 
 # Golf Swing Analysis Skill

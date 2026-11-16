@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/rumstead/ai-loadout/compare/golf-swing-analysis-v0.5.0...golf-swing-analysis-v0.6.0) (2026-11-16)
+
+
+### Features
+
+* **golf-swing-analysis:** read chain.md, the club and strike columns, and keep swings the ball tracker lost ([5936d30](https://github.com/rumstead/ai-loadout/commit/5936d300a1290a2d9fdca0485ab27de91fd7c439))
+* **golf-swing-analysis:** read chain.md, the club and strike columns, and keep swings the ball tracker lost ([52972ba](https://github.com/rumstead/ai-loadout/commit/52972baf46a86a55a537440fe090cfb0e9274da6))
+
 ## [0.5.0](https://github.com/rumstead/ai-loadout/compare/golf-swing-analysis-v0.4.1...golf-swing-analysis-v0.5.0) (2026-11-15)
 
 
