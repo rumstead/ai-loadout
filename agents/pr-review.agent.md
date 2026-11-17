@@ -76,6 +76,10 @@ Combine all subagent findings into a single unified report. Apply these rules in
    loudly and visibly, does not clear this bar. Also read the calling code to check
    whether the failure mode is already handled (retry loops, supervisors, fallback
    paths, idempotent operations) and drop what existing mechanisms already cover.
+   Then check reachability: name the setup that triggers the finding (default
+   install, or the exact flag, command, or config that reaches it), and confirm any
+   default from the project's docs or upgrade notes rather than from memory. Drop a
+   finding that needs a non-default setting nobody runs.
 6. **Format the report** using the output format below. Use the canonical severity rubric so counts are consistent (this rubric is mirrored in the subagent definitions; if a subagent's severity wording disagrees, this rubric wins):
    - **Critical**: security vulnerabilities, data loss, crashes in production.
    - **High**: significant bugs, broken functionality.
@@ -91,11 +95,16 @@ Before returning, remove every temporary artifact created during the review (spo
 
 Only when the user asks to put the findings on the PR:
 
-1. Create a pending review (`github/pull_request_review_write` with method `create`, no event).
-2. Add one comment per finding with `github/add_comment_to_pending_review`, anchored to the PR diff lines. Findings about unchanged files go in the review body or as a file-level comment on the nearest changed file.
+1. Look for an existing pending review first (GitHub allows one per user per PR) and reuse it. Otherwise create one (`github/pull_request_review_write` with method `create`). Never pass an `event` when creating a review, through any tool or the REST API: with an event, GitHub submits the review immediately.
+2. Add one comment per finding with `github/add_comment_to_pending_review`, anchored to the PR diff lines.
+   - A finding about unchanged code is anchored on the nearest changed line, opens with "adjacent to your changes," and names the symbol where the fix goes. Never use the review body. When no changed line is close, raise the finding with the user in chat instead of staging it.
+   - A missing-test finding is anchored on the production code that lacks the test, not the test file. Several gaps in one PR go in one comment.
+   - Check every anchor against the diff hunks at the PR head before showing the user a draft, and show the anchored line with each draft.
+   - After staging, read each pending comment back and confirm it sits on the intended line. While a review is pending its comments return `line` as null, so check the last line of each comment's `diff_hunk` instead.
+   - A `suggestion` block replaces exactly the anchored lines, so keep their indentation.
 3. Write comments in the user's voice. Before drafting any staged comment, you MUST read the `writing-as-rumstead` tone rules and apply them to every comment. Read it directly at `$HOME/ai-loadout/skills/writing-as-rumstead/SKILL.md`, or at the installed symlink `$HOME/.claude/skills/writing-as-rumstead/SKILL.md`. Both live OUTSIDE the workspace, so a workspace-scoped `file_search`/glob will NOT find them. NEVER conclude the file is absent because a glob returned nothing; only a failed read of both absolute paths counts as absent. Only then fall back to your best judgment of the user's tone based on their prior review comments on the PR, the repository, or this session. Never use em dashes.
 4. Stage the findings from the "Worth Commenting On" section, one comment each, plus any "Optional Nits" the user picks. Expect the user to cut some.
-5. NEVER submit the pending review. The user edits and submits it themselves.
+5. NEVER submit the pending review. The user only deletes comments and submits; staged text ships verbatim. Stage exactly the text the user approved in chat, and show any rewording before posting it. Top-level PR comments (`gh pr comment`) and replies to existing threads publish immediately, so post them only when the user explicitly asks.
 
 ### Re-review
 
@@ -120,7 +129,8 @@ Leave out the full table, Checked and Found Clean, and any narrative of earlier 
 
 <The findings that would actually change what the author does, most important
 first. One entry each: `file:line` at the PR head, then the problem and what the
-author would change, in a sentence or two. An empty list is a legitimate outcome.>
+author would change, in a sentence or two. Name the setup that triggers it and
+whether that is a default, a documented mode, or opt-in. An empty list is a legitimate outcome.>
 
 ## Optional Nits
 
