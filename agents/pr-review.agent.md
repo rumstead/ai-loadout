@@ -1,7 +1,7 @@
 ---
 description: "Comprehensive PR review against a GitHub issue. Use when: reviewing a pull request, auditing PR changes against an issue, doing a full code review of a PR with issue context."
 tools: [read, search, execute, agent, "github/*"]
-agents: [pr-issue-alignment, pr-code-quality, pr-performance]
+agents: [pr-issue-alignment, pr-correctness, pr-code-quality, pr-performance, pr-security]
 argument-hint: "Provide the GitHub PR URL and any issue URLs or issue numbers"
 ---
 
@@ -38,22 +38,74 @@ Pass the worktree path to every subagent so they review the PR's actual files in
 
 If the diff exceeds the available context window or is truncated, note "DIFF TRUNCATED: review covers files: <list>" at the top of the report and limit findings to the files actually reviewed. Do not fabricate findings for unread files.
 
-### 2. Delegate to Specialists
+### 2. Pick the Reviewers
+
+Decide which specialists run from what the PR changes, before delegating.
+
+**When the user names a focus**, run what they named and nothing else: "perf only" runs performance, "security pass" runs security, "skip alignment" drops alignment. Synthesis, verification, and the output format still apply to what ran.
+
+**Otherwise**, sort the changed files and pick:
+
+| Reviewer | Runs when |
+|----------|-----------|
+| issue-alignment | once per linked issue (Step 1) |
+| correctness | any changed file holds code, tests, queries, or config that changes behavior |
+| code-quality | any changed file holds code or tests |
+| performance | any changed file runs at runtime: code, queries, migrations, or resource settings such as Kubernetes limits, pool sizes, and timeouts |
+| security | any changed file is on the list below |
+
+Security runs when the diff touches any of:
+
+- request handlers, routes, middleware, or RPC and message consumers
+- authentication, authorization, sessions, tokens, cookies, or permission checks
+- parsing or decoding input from outside the process: request bodies, uploaded files, archives, CLI arguments from other programs
+- building SQL, shell commands, templates, HTML, file paths, or redirect URLs from values that can come from input
+- outbound requests to a URL that can come from input
+- cryptography, random values used as tokens, secrets, or credentials
+- dependency manifests or lockfiles (`go.mod`, `package.json`, `requirements*.txt`, `*.lock`, and the like)
+- CI workflows, Dockerfiles, infrastructure as code, RBAC or IAM policy
+
+When you cannot tell whether a file qualifies, run the reviewer.
+
+The table is the rule: skip a reviewer only when its condition is false. Whether a change is small, low risk, or off the hot path is what the reviewer decides, so it is never a reason to skip one.
+
+Once the reports are in, if any specialist lists a security concern under Handed Off and security did not run, run it on those files before synthesis. Under a user-named focus, list those leads in one line at the end of the report instead.
+
+Put the selection in the report header (`**Reviewers**`) in the exact shape the output format gives.
+
+### 3. Delegate to Specialists
 
 When the current harness supports the named specialist agents, give each subagent the diff, the worktree path from Step 1, and the merge-base it needs to read surrounding code **and trace call sites itself**. Each reviewer is expected to understand the full context of a change — not just the changed lines, but where the changed code is used, who calls it, how its return values and errors are consumed, and how often it runs — before critiquing it. Instruct each subagent to do this tracing; do not hand them the answers.
 
-When nested delegation is unavailable, execute the `issue-alignment`, `code-quality-review`, and `performance-review` skill procedures yourself instead. Keep their evidence and findings separate until synthesis, and perform the same call-site tracing required of a specialist. This direct-review mode is the required fallback for harnesses whose generated agent has no delegation tool.
+When you have the Agent tool, launch every reviewer Step 2 picked as its own subagent, however small the change. Separate reviewers are what make their agreement meaningful.
+
+These are the reasons given for reviewing directly or dropping a reviewer anyway. None of them holds:
+
+| Thought | Reality |
+|---------|---------|
+| "The diff is small, I can read it all myself" | Size is not a condition in Step 2. Delegate. |
+| "I already traced the call sites" | Your tracing is for verification in Step 4, not a substitute for the reviewer's. |
+| "This handler only reuses existing parsing" | It is a handler, so security runs. The reviewer judges the risk. |
+| "Nothing here is on a hot path" | Runtime code changed, so performance runs. The reviewer judges the path. |
+
+If the header you are about to write says `direct` while you have the Agent tool, stop and delegate.
+
+When nested delegation is unavailable (no Agent tool, or the named agents are not installed), execute the skill procedures for the reviewers Step 2 picked yourself instead: `issue-alignment`, `correctness-review`, `code-quality-review`, `performance-review`, `appsec-review`. Keep their evidence and findings separate until synthesis, and perform the same call-site tracing required of a specialist. This direct-review mode is the required fallback for harnesses whose generated agent has no delegation tool.
 
 When writing the delegation prompt for each subagent, do NOT include your own hypotheses, suspected bugs,
 "note the dead code…" hints, or leading yes/no questions — describe only the
 change and the task. Findings must emerge independently so that agreement between
-reviewers is meaningful rather than an echo of your own conclusions. (Note: this restriction applies to delegation context only — during synthesis in Step 3, you are expected to read and verify code yourself before including findings in the report.)
+reviewers is meaningful rather than an echo of your own conclusions. (Note: this restriction applies to delegation context only. During synthesis in Step 4, you are expected to read and verify code yourself before including findings in the report.)
+
+Run only the reviewers Step 2 picked:
 
 1. **@pr-issue-alignment**: Invoke once for each linked issue. Pass that issue's content, the diff, and the worktree path. Ask it to verify all requirements are addressed, that the change resolves the issue's root cause rather than only the reported symptom, and that sibling code paths sharing the same root cause are not left unaddressed.
-2. **@pr-code-quality**: Pass the diff plus the worktree path and merge-base so it can read surrounding code. Ask it to trace how the changed code is called and used, then evaluate idioms, style, design, and fit, including whether an existing helper or abstraction already provides the behavior.
-3. **@pr-performance**: Pass the diff plus the worktree path and merge-base. Ask it to trace the changed code's call sites to establish execution frequency and concurrency context, then identify performance, scalability, and concurrency risks.
+2. **@pr-correctness**: Pass the diff plus the worktree path and merge-base. Ask it to establish each changed function's contract from its callers, then find inputs and states where the change does the wrong thing, and tests that would pass with the bug.
+3. **@pr-code-quality**: Pass the diff plus the worktree path and merge-base so it can read surrounding code. Ask it to trace how the changed code is called and used, then evaluate idioms, style, design, and fit, including whether an existing helper or abstraction already provides the behavior.
+4. **@pr-performance**: Pass the diff plus the worktree path and merge-base. Ask it to trace the changed code's call sites to establish execution frequency and concurrency context, then identify performance, scalability, and concurrency risks.
+5. **@pr-security**: Pass the diff plus the worktree path and merge-base. Ask it to find where untrusted input enters the changed code and trace it to where it is used, and to check the changed CI, dependency, and infrastructure files.
 
-### 3. Synthesize Results
+### 4. Synthesize Results
 
 Combine all subagent findings into a single unified report. Apply these rules in order:
 
@@ -65,11 +117,12 @@ Combine all subagent findings into a single unified report. Apply these rules in
   `file:line` of the supporting code (and the call site, where the finding depends on usage).
   Mark anything you could not confirm as
   **UNVERIFIED**. A finding may appear in the table as UNVERIFIED even if its source subagent is marked UNAVAILABLE.
-3. **Severity reconciliation**: When subagents disagree on a finding's severity,
+3. **Handed Off leads**: Each specialist may end with a Handed Off list of concerns outside its scope. Treat these as leads, not findings. Check that the owning reviewer's report covers each one. When the owner did not run or did not report it, verify it yourself under rule 2 and add it under the owner's category.
+4. **Severity reconciliation**: When subagents disagree on a finding's severity,
   keep the *higher* rating and note the disagreement. NEVER silently downgrade a
   subagent's severity during synthesis.
-4. **Deduplicate**: Deduplicate findings that refer to the same file, same line range (within 5 lines), and the same root cause. If two findings share a root cause but affect different locations, keep both and cross-reference them.
-5. **Practical impact filter**: Ask of every finding, what would the author do
+5. **Deduplicate**: Deduplicate findings that refer to the same file, same line range (within 5 lines), and the same root cause. If two findings share a root cause but affect different locations, keep both and cross-reference them.
+6. **Practical impact filter**: Ask of every finding, what would the author do
    differently because of this? Drop it when the honest answer is "nothing" or
    "they would notice it themselves within a minute of hitting it". A change that
    only makes something slower, noisier, or briefly confusing, while still failing
@@ -80,18 +133,18 @@ Combine all subagent findings into a single unified report. Apply these rules in
    install, or the exact flag, command, or config that reaches it), and confirm any
    default from the project's docs or upgrade notes rather than from memory. Drop a
    finding that needs a non-default setting nobody runs.
-6. **Format the report** using the output format below. Use the canonical severity rubric so counts are consistent (this rubric is mirrored in the subagent definitions; if a subagent's severity wording disagrees, this rubric wins):
+7. **Format the report** using the output format below. Use the canonical severity rubric so counts are consistent (this rubric is mirrored in the subagent definitions; if a subagent's severity wording disagrees, this rubric wins):
    - **Critical**: security vulnerabilities, data loss, crashes in production.
    - **High**: significant bugs, broken functionality.
    - **Medium**: code quality issues that could cause future bugs.
    - **Low**: style, naming, minor improvements.
-7. **Anchor line numbers to the PR branch.** Every `file:line` in the report must be relative to the PR's source branch (e.g. `origin/<sourceBranch>`), not whatever the working tree happens to be checked out to. If a subagent reviewed a worktree or a different ref, re-resolve its line numbers against the PR branch during verification. State the ref the line numbers are relative to near the top of the report.
+8. **Anchor line numbers to the PR branch.** Every `file:line` in the report must be relative to the PR's source branch (e.g. `origin/<sourceBranch>`), not whatever the working tree happens to be checked out to. If a subagent reviewed a worktree or a different ref, re-resolve its line numbers against the PR branch during verification. State the ref the line numbers are relative to near the top of the report.
 
-### 4. Clean Up Scratch Artifacts
+### 5. Clean Up Scratch Artifacts
 
 Before returning, remove every temporary artifact created during the review (spooled diffs, the PR-head `git worktree` via `git worktree remove`). In the final message, list any scratch paths you intentionally kept and why; the default is to keep none.
 
-### 5. Stage Review Comments (Optional)
+### 6. Stage Review Comments (Optional)
 
 Only when the user asks to put the findings on the PR:
 
@@ -123,6 +176,7 @@ Leave out the full table, Checked and Found Clean, and any narrative of earlier 
 **Issues**: #<number> — <title>; #<number> — <title>
 **Branch**: <branch name>
 **Files Changed**: <count>
+**Reviewers**: Ran <reviewers, comma-separated, or none> as <subagents, or direct: why delegation was unavailable>. Skipped: <reviewer (reason), one per reviewer not run, or none>.
 **Line refs**: <ref>. Tests not run, CI <status>.
 
 ## Worth Commenting On

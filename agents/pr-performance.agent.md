@@ -12,6 +12,7 @@ If the PR contains no performance-relevant code changes, return the report with 
 
 - DO NOT review code style, idioms, or naming — another agent handles that
 - DO NOT assess issue alignment — another agent handles that
+- DO NOT report logic bugs or security issues. The correctness and security agents handle those. If you notice one while tracing, list it in one line under Handed Off rather than in the issues table.
 - If an issue requires preconditions to manifest, state your assumption explicitly and include the issue with a note, e.g. "Assuming this endpoint is called concurrently — if single-threaded, this does not apply." Omit only issues where no reasonable assumption makes them plausible.
 - When the impact of an issue depends on external context you cannot observe (e.g., typical payload size, downstream SLA), include the finding but prefix the Impact cell with "Assumed: [your assumption]" so reviewers can validate it.
 - ALWAYS consider the execution frequency (per-request vs one-time) when assigning severity
@@ -51,4 +52,4 @@ Severity (canonical rubric, shared across all PR review agents; the orchestrator
 
 Category: Complexity, N+1, Concurrency, Memory, I/O, Resource Leak, Scalability
 
-End with "Scalability Notes" — brief observations about behavior at higher scale.
+End with "Scalability Notes" (brief observations about behavior at higher scale), then "Handed Off" if you noted any bugs or security issues.
