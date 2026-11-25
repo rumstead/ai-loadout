@@ -5,8 +5,9 @@ prompts:
   - '{{ request }}'
 
 providers:
-  - id: anthropic:claude-agent-sdk
-    config:
+  - &agent-sdk
+    id: anthropic:claude-agent-sdk
+    config: &agent-sdk-config
       model: "{{ env.EVAL_MODEL | default('sonnet') }}"
       # workspace/.claude/skills links to every public skill, so each case
       # also checks that the right one is picked.
@@ -255,6 +256,177 @@ tests:
         value: code-quality-review
       - type: javascript
         value: "!(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Edit', 'Write'].includes(t.name))"
+
+  # review/pager: Page is documented as 1-based and its only caller never
+  # passes a page below 1, but it starts at page*size, so page 1 skips the
+  # first page and the last page panics on start > len. The one test calls
+  # page 0, which no caller sends, so it passes with both bugs.
+  - description: a bug hunt goes to correctness-review and finds the planted pager bugs
+    metadata:
+      skills: [correctness-review]
+    vars:
+      request: >-
+        Check review/pager for bugs. Treat every file there as new in a PR.
+        Findings only, don't edit anything.
+    assert:
+      - type: skill-used
+        value: correctness-review
+      - type: javascript
+        value: "!(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Edit', 'Write'].includes(t.name))"
+      - type: javascript
+        value: '/page\s*-\s*1|1-based|one-based|numbered from 1|first page/i.test(output)'
+      - type: javascript
+        value: '/panic|out of range|bounds/i.test(output)'
+      - type: javascript
+        value: '/TestPage|pager_test\.go/.test(output)'
+
+  # review/notes: requireUser and handleGetNote are sound and every query is
+  # parameterized. handleDeleteNote drops the owner check handleGetNote has,
+  # and handleAttachment joins a query parameter into a path under FilesDir.
+  - description: a security review goes to appsec-review and finds the planted notes bugs
+    metadata:
+      skills: [appsec-review]
+    vars:
+      request: >-
+        Security review of review/notes. Treat every file there as new in a PR.
+        Findings only, don't edit anything.
+    assert:
+      - type: skill-used
+        value: appsec-review
+      - type: javascript
+        value: "!(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Edit', 'Write'].includes(t.name))"
+      - type: javascript
+        value: '/travers|\.\.\//i.test(output)'
+      - type: javascript
+        value: "output.split('\\n').some(l => /delete/i.test(l) && /owner|another user|other users|IDOR|authori[sz]/i.test(l))"
+      - type: javascript
+        value: "!output.split('\\n').some(l => /^\\|/.test(l) && /\\b(Critical|High)\\b/.test(l) && /inject/i.test(l))"
+
+  # review/ci: a pull_request_target workflow checks out and builds the PR
+  # head, runs the PR's own deploy script with a secret in its environment,
+  # and pastes the PR title into a run: line.
+  - description: a security review of a CI workflow finds the pwn request and the script injection
+    metadata:
+      skills: [appsec-review]
+    vars:
+      request: >-
+        Security review of review/ci. Treat every file there as new in a PR.
+        Findings only, don't edit anything.
+    assert:
+      - type: skill-used
+        value: appsec-review
+      - type: javascript
+        value: "output.split('\\n').some(l => /^\\|/.test(l) && /\\|\\s*Critical\\s*\\|/.test(l) && /pull_request_target|head\\.sha|PR head/i.test(l))"
+      - type: javascript
+        value: "output.split('\\n').some(l => /pull_request\\.title|PR title/i.test(l) && /inject/i.test(l))"
+
+  # names.go has style problems for code-quality-review but no bug and no
+  # attack surface, so these two should come back without a Critical or High row.
+  # The pager case covers picking the skill from "check X for bugs"; this one
+  # names the review, since a 25-line file is often read without a skill.
+  - description: correctness-review stays quiet on a file with no bugs
+    metadata:
+      skills: [correctness-review]
+    vars:
+      request: Run a correctness review of names.go. Findings only, don't edit it.
+    assert:
+      - type: skill-used
+        value: correctness-review
+      - type: javascript
+        value: "!output.split('\\n').some(l => /^\\|/.test(l) && /\\|\\s*(Critical|High)\\s*\\|/.test(l))"
+
+  - description: appsec-review stays quiet on a file with no attack surface
+    metadata:
+      skills: [appsec-review]
+    vars:
+      request: Security review of names.go. Findings only, don't edit it.
+    assert:
+      - type: skill-used
+        value: appsec-review
+      - type: javascript
+        value: "!output.split('\\n').some(l => /^\\|/.test(l) && /\\|\\s*(Critical|High)\\s*\\|/.test(l))"
+
+  # inventory/ is a git repo that evals/with-workspace.sh builds from
+  # workspace/prs/inventory. slog-release is a nine-file refactor (logx to slog,
+  # a new POST /release, store helpers, table tests). Buried in it, Reserve's
+  # rewrite rejects a reservation of exactly the remaining stock (avail <= qty),
+  # which main and docs/api.md allow, and the rewritten tests drop the case
+  # that reserved the last units. It changes handlers, runtime code and tests,
+  # so every reviewer runs, each as its own subagent.
+  - description: pr-review runs every reviewer on a noisy refactor and finds the buried bug
+    metadata:
+      skills: [pr-review]
+    # The other cases run without the subagent tool. These need it, and a
+    # review that fans out to five subagents needs a larger budget.
+    provider: &pr-review-provider
+      <<: *agent-sdk
+      config:
+        <<: *agent-sdk-config
+        append_allowed_tools: ['Bash', 'Write', 'WebSearch', 'WebFetch', 'Agent', 'Task']
+        max_budget_usd: 10
+    vars:
+      request: >-
+        Use the pr-review agent to review the slog-release branch of the git
+        repo in inventory/ against main. It is a local branch with no GitHub PR
+        and no linked issue, so use the git fallback. Wait for the agent to
+        finish, then return its report verbatim. Don't edit any files or post anything.
+    assert:
+      - type: javascript
+        value: "(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Agent', 'Task'].includes(t.name) && t.input?.subagent_type === 'pr-review')"
+      - type: javascript
+        value: "!(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Edit', 'Write'].includes(t.name))"
+      - type: javascript
+        value: |-
+          const m = output.match(/^\*\*Reviewers\*\*:(.*)$/m);
+          if (!m) return false;
+          const ran = m[1].split(/Skipped:/i)[0];
+          return ['correctness', 'quality', 'perf', 'security'].every(r => new RegExp(r, 'i').test(ran)) && /\bas (a )?subagents?\b/i.test(ran) && !/\bdirect\b/i.test(ran);
+      - type: javascript
+        value: |-
+          const worth = (output.split(/^## Worth Commenting On\s*$/m)[1] || '').split(/^## /m)[0];
+          return /store\.go/.test(worth) && /<=|exact|equal|all (of )?the (remaining|available)|last (unit|item)s?|entire stock|remaining stock/i.test(worth);
+
+  # docs-only changes README.md and docs/api.md and nothing else, so no
+  # reviewer has anything to read.
+  - description: pr-review skips performance and security on a docs-only PR
+    metadata:
+      skills: [pr-review]
+    provider: *pr-review-provider
+    vars:
+      request: >-
+        Use the pr-review agent to review the docs-only branch of the git repo
+        in inventory/ against main. It is a local branch with no GitHub PR and
+        no linked issue, so use the git fallback. Wait for the agent to finish,
+        then return its report verbatim. Don't edit any files or post anything.
+    assert:
+      - type: javascript
+        value: "(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Agent', 'Task'].includes(t.name) && t.input?.subagent_type === 'pr-review')"
+      - type: javascript
+        value: |-
+          const m = output.match(/^\*\*Reviewers\*\*:(.*)$/m);
+          if (!m) return false;
+          const [ran, skipped = ''] = m[1].split(/Skipped:/i);
+          return !/perf|security/i.test(ran) && /perf/i.test(skipped) && /security/i.test(skipped);
+
+  - description: pr-review runs only the reviewer a focus names
+    metadata:
+      skills: [pr-review]
+    provider: *pr-review-provider
+    vars:
+      request: >-
+        Use the pr-review agent for a perf-only review of the slog-release
+        branch of the git repo in inventory/ against main. It is a local branch
+        with no GitHub PR and no linked issue, so use the git fallback. Wait for
+        the agent to finish, then return its report verbatim. Don't edit any files or post anything.
+    assert:
+      - type: javascript
+        value: "(context.providerResponse?.metadata?.toolCalls || []).some(t => ['Agent', 'Task'].includes(t.name) && t.input?.subagent_type === 'pr-review')"
+      - type: javascript
+        value: |-
+          const m = output.match(/^\*\*Reviewers\*\*:(.*)$/m);
+          if (!m) return false;
+          const ran = m[1].split(/Skipped:/i)[0];
+          return /perf/i.test(ran) && !/correctness|quality|security|alignment/i.test(ran) && /\bas (a )?subagents?\b/i.test(ran) && !/\bdirect\b/i.test(ran);
 
   - description: golf sim numbers come from the Sim table, and an unchanged screen gets none
     metadata:
