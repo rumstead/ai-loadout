@@ -32,7 +32,9 @@ Accept one or more issue URLs or numbers. Fetch the PR details before deciding w
 **Materialize the PR head for subagents.** Subagents may not have terminal access, so check the PR code out somewhere plain file reads work:
 
 1. `git fetch <remote> pull/<PR#>/head` (use the remote pointing at the base repository; this works for fork PRs)
-2. `git worktree add <scratchpad>/pr-<PR#>-review FETCH_HEAD`, using the session scratchpad directory when the harness provides one and `/tmp` only when it does not
+2. `git worktree add <scratchpad>/pr-<PR#>-review FETCH_HEAD`, using the session scratchpad directory when the harness provides one and `/tmp` only when it does not. For a local branch with no PR, skip the fetch and use `git worktree add <scratchpad>/<branch>-review <branch>`.
+
+The worktree is scratch space that Step 5 removes, not an edit to the user's files, so create it even when the user asked you not to edit or change anything.
 
 Pass the worktree path to every subagent so they review the PR's actual files instead of a prose description of the diff, and so their reported line numbers are anchored to the PR head by construction.
 
