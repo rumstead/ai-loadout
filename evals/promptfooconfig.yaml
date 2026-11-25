@@ -260,14 +260,16 @@ tests:
   # review/pager: Page is documented as 1-based and its only caller never
   # passes a page below 1, but it starts at page*size, so page 1 skips the
   # first page and the last page panics on start > len. The one test calls
-  # page 0, which no caller sends, so it passes with both bugs.
+  # page 0, which no caller sends, so it passes with both bugs. The request
+  # names the review, as pr-correctness does, since a request to "check X for
+  # bugs" on a few small files is often answered without loading a skill.
   - description: a bug hunt goes to correctness-review and finds the planted pager bugs
     metadata:
       skills: [correctness-review]
     vars:
       request: >-
-        Check review/pager for bugs. Treat every file there as new in a PR.
-        Findings only, don't edit anything.
+        Do a correctness review of review/pager. Treat every file there as new
+        in a PR. Findings only, don't edit anything.
     assert:
       - type: skill-used
         value: correctness-review
@@ -322,8 +324,6 @@ tests:
 
   # names.go has style problems for code-quality-review but no bug and no
   # attack surface, so these two should come back without a Critical or High row.
-  # The pager case covers picking the skill from "check X for bugs"; this one
-  # names the review, since a 25-line file is often read without a skill.
   - description: correctness-review stays quiet on a file with no bugs
     metadata:
       skills: [correctness-review]
