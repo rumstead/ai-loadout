@@ -96,12 +96,13 @@ tests:
         value: '(output.match(/^DEF: [^\n]*(giveaway|gives? (it |the ball )?away)/gm) || []).length === 2'
       # Both leagues start the Giants against Washington, and `sleeper_data.py
       # offense --team WAS` prints 0.5 giveaways a game. Any other giveaway
-      # figure is one that command prints for a week 10 offense. A team name
-      # may sit between `vs` and the second figure.
+      # figure is one that command prints for a week 10 offense. `a game` may
+      # follow the first figure, and a team name may sit between `vs` and the
+      # second.
       - type: javascript
         value: |-
           const printed = [0.5, 0.6, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 1.6, 1.7, 1.9, 2.1, 2.2];
-          const re = /(\d+(?:\.\d+)?) giveaways?|(?:giveaways?|gives? (?:it |the ball )?away)(?: a game| per game)?:? (\d+(?:\.\d+)?)(?: (?:vs\.?|and|to)(?: [A-Z][A-Za-z.]*)* (\d+(?:\.\d+)?))?/g;
+          const re = /(\d+(?:\.\d+)?) giveaways?|(?:giveaways?|gives? (?:it |the ball )?away)(?: a game| per game)?:? (\d+(?:\.\d+)?)(?: a game| per game)?(?: (?:vs\.?|and|to)(?: [A-Z][A-Za-z.']*)* (\d+(?:\.\d+)?))?/g;
           const lines = output.match(/^DEF: .*$/gm) || [];
           return lines.length === 2 && lines.every(l => {
             const nums = [...l.matchAll(re)].flatMap(m => m.slice(1)).filter(Boolean).map(Number);
