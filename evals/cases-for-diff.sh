@@ -28,6 +28,18 @@ while IFS= read -r path; do
     evals/workspace/golf/*)
       skills[golf-swing-analysis]=1
       ;;
+    agents/* | install.sh | evals/workspace/prs/*)
+      skills[pr-review]=1
+      ;;
+    evals/workspace/review/*)
+      skills[correctness-review]=1
+      skills[appsec-review]=1
+      ;;
+    evals/workspace/names.go)
+      skills[code-quality-review]=1
+      skills[correctness-review]=1
+      skills[appsec-review]=1
+      ;;
     evals/workspace/*)
       skills[code-quality-review]=1
       ;;

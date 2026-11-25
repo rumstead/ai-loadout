@@ -6,6 +6,8 @@ skills/writing-as-rumstead/
 evals/workspace/*
 !evals/workspace/.claude/
 !evals/workspace/names.go
+!evals/workspace/review/
+!evals/workspace/prs/
 !evals/workspace/golf/
 !evals/workspace/fantasy/
 __pycache__/

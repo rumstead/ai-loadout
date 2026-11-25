@@ -43,12 +43,6 @@ CLAUDE_SKILLS="$HOME/.claude/skills"
 # Any other Agent Skills harness (pi, among others) reads ~/.agents/skills.
 AGENTS_SKILLS="$HOME/.agents/skills"
 
-mkdir -p \
-  "$VSCODE_PROMPTS" "$CLI_AGENTS" "$DEFAULT_AGENTS" "$COPILOT_SKILLS" \
-  "$VSCODE_SERVER_PROMPTS" \
-  "$WINDSURF_DIR" \
-  "$CLAUDE_AGENTS" "$CLAUDE_SKILLS" "$AGENTS_SKILLS"
-
 link() { ln -sfn "$1" "$2/$(basename "$1")"; }
 
 # ln would put the link inside a real directory of the same name (a skill
@@ -184,6 +178,24 @@ has_apply_to() {
     END { exit !found }
   ' "$1"
 }
+
+# `install.sh --claude-agents <dir>` writes only the generated Claude Code
+# subagents, into <dir>, and installs nothing. The evals use it to give their
+# workspace the same agents an install would.
+if [[ "${1:-}" == --claude-agents ]]; then
+  mkdir -p "$2"
+  for f in "$REPO_DIR"/agents/*.agent.md; do
+    name="$(basename "$f" .agent.md)"
+    to_claude_agent "$name" < "$f" > "$2/$name.md"
+  done
+  exit 0
+fi
+
+mkdir -p \
+  "$VSCODE_PROMPTS" "$CLI_AGENTS" "$DEFAULT_AGENTS" "$COPILOT_SKILLS" \
+  "$VSCODE_SERVER_PROMPTS" \
+  "$WINDSURF_DIR" \
+  "$CLAUDE_AGENTS" "$CLAUDE_SKILLS" "$AGENTS_SKILLS"
 
 # ---- Agents -------------------------------------------------------------------
 for f in "$REPO_DIR"/agents/*.agent.md; do

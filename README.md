@@ -22,15 +22,19 @@ ai-loadout/
 | Agent | Purpose |
 |-------|---------|
 | `pr-code-quality` | Reviews idioms, style consistency, design patterns, architectural fit |
+| `pr-correctness` | Finds logic bugs, unhandled edge cases, broken caller contracts, and tests that miss them |
 | `pr-issue-alignment` | Verifies PR changes align with a GitHub issue's requirements |
 | `pr-performance` | Finds performance bottlenecks, scalability and concurrency risks |
-| `pr-review` | Comprehensive PR review orchestrating the above |
+| `pr-security` | Finds vulnerabilities a change introduces or exposes, traced from untrusted input to where it lands |
+| `pr-review` | Comprehensive PR review that picks which of the above to run from what the PR changes |
 
 ### Skills
 
 | Skill | Description |
 |-------|-------------|
 | `code-quality-review` | Evaluate code idioms, style, design patterns, and architectural fit |
+| `correctness-review` | Find logic bugs, edge cases, error-path mistakes, broken caller contracts, and test gaps |
+| `appsec-review` | Find vulnerabilities in a change: authorization, injection, path traversal, secrets, supply chain, CI |
 | `issue-alignment` | Verify PR changes align with a GitHub issue's requirements |
 | `performance-review` | Find performance bottlenecks, scalability and concurrency risks |
 | `fantasy-waiver-sweep` | Weekly Sleeper waiver sweep: lineup holes, bench audit, league-winner pickups, bids, streamers |
@@ -162,6 +166,13 @@ your Claude plan) or an `ANTHROPIC_API_KEY` one, and read
 other fantasy cases (the waiver sweep, start/sit, and a request for both) run
 from a saved week in `evals/workspace/fantasy/`, so their lineup holes,
 injuries and lines never change.
+
+The PR review cases run `pr-review` end to end on a git repo that
+`evals/with-workspace.sh` builds from `evals/workspace/prs/<repo>/`: `base/` is
+`main`, and each `heads/<branch>/` holds the files one PR changes, its commit
+`MESSAGE`, and an optional `DELETED` list. The workspace gets its subagents from
+`install.sh --claude-agents <dir>`, which writes the generated Claude Code
+agents there and installs nothing.
 
 Each case runs in its own copy of `evals/workspace`, four at a time, and CI
 runs only the cases tagged with a skill the PR changes
