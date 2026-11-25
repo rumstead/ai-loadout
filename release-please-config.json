@@ -31,6 +31,24 @@
         }
       ]
     },
+    "skills/correctness-review": {
+      "component": "correctness-review",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "SKILL.md"
+        }
+      ]
+    },
+    "skills/appsec-review": {
+      "component": "appsec-review",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "SKILL.md"
+        }
+      ]
+    },
     "skills/fantasy-waiver-sweep": {
       "component": "fantasy-waiver-sweep",
       "extra-files": [
