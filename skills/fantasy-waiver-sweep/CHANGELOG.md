@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/rumstead/ai-loadout/compare/fantasy-waiver-sweep-v0.4.1...fantasy-waiver-sweep-v0.4.2) (2026-11-25)
+
+
+### Bug Fixes
+
+* **fantasy-waiver-sweep:** keep the no-move and IR-only headlines to their exact text ([72d7100](https://github.com/rumstead/ai-loadout/commit/72d710003a15734a40d45f296b9337b35a6ea2f9))
+* **fantasy-waiver-sweep:** write DEF giveaways as giveaways A vs B a game ([1b3c9ef](https://github.com/rumstead/ai-loadout/commit/1b3c9eff3deeb03a3c62c7c84613db3bf4d5a0c4))
+
 ## [0.4.1](https://github.com/rumstead/ai-loadout/compare/fantasy-waiver-sweep-v0.4.0...fantasy-waiver-sweep-v0.4.1) (2026-11-16)
 
 
